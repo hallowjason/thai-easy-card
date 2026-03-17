@@ -1,0 +1,400 @@
+/* Thai Easy Card — 極簡樣式 */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #FAFAF8;
+  --bg2:       #F0EEE9;
+  --border:    #E0DDD8;
+  --text:      #2C2C2C;
+  --text-sub:  #8A8A8A;
+  --accent:    #C8703A;  /* 泰橙 */
+  --blue:      #3A7BC8;  /* 低音字 */
+  --red:       #C83A3A;  /* 高音字 */
+  --green:     #3A9C5A;  /* 中音字 */
+  --radius:    12px;
+  --shadow:    0 2px 12px rgba(0,0,0,.07);
+}
+
+body {
+  font-family: 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── 標題列 ─────────────────────────────── */
+header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+header h1 span { color: var(--accent); }
+
+/* ── 導航 ───────────────────────────────── */
+nav {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+nav button {
+  flex: 1;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 7px 4px;
+  font-size: 13px;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all .15s;
+}
+nav button.active {
+  background: var(--bg2);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── 主內容 ─────────────────────────────── */
+main { flex: 1; padding: 20px; }
+.hidden { display: none !important; }
+
+/* ── 進度條 ─────────────────────────────── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.progress-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .3s;
+  width: 0%;
+}
+#progress { font-size: 13px; color: var(--text-sub); min-width: 50px; text-align: right; }
+
+/* ── 卡片容器 ───────────────────────────── */
+.card-wrap {
+  perspective: 1000px;
+  margin-bottom: 20px;
+}
+#card {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  transform-style: preserve-3d;
+  transition: transform .45s ease;
+  cursor: pointer;
+}
+#card.flipped { transform: rotateY(180deg); }
+
+.card-side {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px 20px;
+  gap: 12px;
+}
+#card-back { transform: rotateY(180deg); }
+
+/* ── 卡片標籤 ───────────────────────────── */
+#card-type-label {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  font-size: 11px;
+  color: var(--text-sub);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+/* ── 圖片 ───────────────────────────────── */
+#card-image {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+/* ── 文字樣式 ───────────────────────────── */
+.card-thai {
+  font-size: 44px;
+  line-height: 1.3;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.card-chinese {
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+}
+.card-pos {
+  font-size: 12px;
+  color: var(--text-sub);
+  background: var(--bg2);
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.card-hint {
+  font-size: 13px;
+  color: var(--text-sub);
+  text-align: center;
+}
+.card-audio-prompt {
+  font-size: 13px;
+  color: var(--accent);
+}
+.card-example {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+}
+.example-thai { font-size: 20px; color: var(--text); }
+.example-zh   { font-size: 14px; color: var(--text-sub); }
+
+/* 盲聽卡正面 */
+.card-blind-listen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.listen-icon { font-size: 52px; }
+
+/* ── 按鈕列 ─────────────────────────────── */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.btn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-audio {
+  flex: none;
+  width: 48px;
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 18px;
+  border: 1px solid var(--border);
+}
+
+/* ── 評分按鈕 ───────────────────────────── */
+#grade-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.btn-grade {
+  flex: none;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 4px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all .15s;
+}
+.btn-grade:active { transform: scale(.95); }
+.btn-grade .grade-label { font-size: 12px; font-weight: 700; }
+.btn-grade .grade-sub   { font-size: 10px; opacity: .7; }
+
+.grade-again { background: #FFE5E5; color: #C83A3A; }
+.grade-hard  { background: #FFF0DC; color: #B86A00; }
+.grade-good  { background: #E5F0FF; color: #3A6AC8; }
+.grade-easy  { background: #E5F5EC; color: #1E8C4A; }
+
+/* 快捷鍵提示 */
+.shortcut-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 8px;
+}
+kbd {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+}
+
+/* ── 空狀態 ─────────────────────────────── */
+#empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-icon { font-size: 52px; margin-bottom: 12px; }
+.empty-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.empty-sub { font-size: 14px; color: var(--text-sub); }
+
+/* ── 統計頁 ─────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 12px;
+  text-align: center;
+}
+.stat-num { font-size: 32px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+
+.tone-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.tone-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.tone-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+}
+.tone-dot.low  { background: var(--blue); }
+.tone-dot.mid  { background: var(--green); }
+.tone-dot.high { background: var(--red); }
+
+/* ── 設定頁 ─────────────────────────────── */
+.settings-section {
+  margin-bottom: 24px;
+}
+.settings-section h3 {
+  font-size: 13px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+.setting-row label { font-size: 15px; }
+.setting-row input[type="number"] {
+  width: 60px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 15px;
+  background: var(--bg);
+}
+.setting-row input[type="checkbox"] {
+  width: 20px; height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.card-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.card-type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.card-type-option input { accent-color: var(--accent); }
+
+.btn-full {
+  width: 100%;
+  margin-top: 8px;
+}
+.btn-danger {
+  background: #FFE5E5;
+  color: #C83A3A;
+  border: 1px solid #FFCCCC;
+  font-size: 14px;
+  padding: 12px;
+  margin-top: 6px;
+}
+.btn-save {
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  padding: 14px;
+}
+
+/* ── 聲調顏色字母 ────────────────────────── */
+.tone-low  { color: var(--blue); }
+.tone-mid  { color: var(--green); }
+.tone-high { color: var(--red); }
+
+/* ── RWD ────────────────────────────────── */
+@media (max-width: 400px) {
+  .card-thai { font-size: 36px; }
+  .card-chinese { font-size: 24px; }
+  #grade-row .btn-grade .grade-sub { display: none; }
+}
