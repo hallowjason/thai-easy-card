@@ -1,13 +1,22 @@
 // Thai Easy Card — 主程式
 'use strict';
 
+// ── 卡片類型常數 ──────────────────────────────────────────────────
+const CARD_TYPES = { ZH2TH: 'zh2th', TH2ZH: 'th2zh', BLIND_READ: 'blind_read', BLIND_LISTEN: 'blind_listen' };
+const CARD_TYPE_LABEL = {
+  [CARD_TYPES.ZH2TH]:       '中 → 泰',
+  [CARD_TYPES.TH2ZH]:       '泰 → 中',
+  [CARD_TYPES.BLIND_READ]:  '盲讀卡',
+  [CARD_TYPES.BLIND_LISTEN]:'盲聽卡',
+};
+
 // ── 狀態 ──────────────────────────────────────────────────────────
 let queue = [];
 let currentIdx = 0;
 let isFlipped = false;
 let currentCard = null;
 let imageCache = {};
-let settings = getSettings();
+let settings;
 
 // ── DOM ───────────────────────────────────────────────────────────
 const el = {
@@ -28,24 +37,14 @@ const el = {
   gradeRow:    document.getElementById('grade-row'),
   emptyState:  document.getElementById('empty-state'),
   navBtns:     document.querySelectorAll('[data-nav]'),
-  // 統計
   statTotal:   document.getElementById('stat-total'),
   statDue:     document.getElementById('stat-due'),
   statLearned: document.getElementById('stat-learned'),
-  // 設定
-  settingDailyNew: document.getElementById('setting-daily-new'),
-  settingImage:    document.getElementById('setting-image'),
+  settingDailyNew:  document.getElementById('setting-daily-new'),
+  settingImage:     document.getElementById('setting-image'),
   settingCardTypes: document.querySelectorAll('[name="cardType"]'),
   btnSaveSettings:  document.getElementById('btn-save-settings'),
   btnResetAll:      document.getElementById('btn-reset-all'),
-};
-
-// 卡片類型中文標籤
-const CARD_TYPE_LABEL = {
-  zh2th:        '中 → 泰',
-  th2zh:        '泰 → 中',
-  blind_read:   '盲讀卡',
-  blind_listen: '盲聽卡',
 };
 
 // ── 初始化 ────────────────────────────────────────────────────────
@@ -76,68 +75,48 @@ function renderCard() {
   el.card.classList.remove('flipped');
   el.gradeRow.classList.add('hidden');
   el.btnFlip.classList.remove('hidden');
-
   el.cardType.textContent = CARD_TYPE_LABEL[currentCard.cardType] || '';
-
   renderFront(currentCard);
   renderBack(currentCard);
   loadImage(currentCard);
 }
 
-function renderFront(card) {
-  el.cardFront.innerHTML = '';
-  const type = card.cardType;
+function exampleHTML(card) {
+  return `<div class="card-example">
+    <span class="example-thai">${card.example.thai}</span>
+    <span class="example-zh">${card.example.chinese}</span>
+  </div>`;
+}
 
-  if (type === 'zh2th') {
-    el.cardFront.innerHTML = `
-      <div class="card-chinese">${card.chinese}</div>
-      <div class="card-pos">${card.pos}</div>`;
-  } else if (type === 'th2zh') {
-    el.cardFront.innerHTML = `
-      <div class="card-thai">${card.thai}</div>`;
+function renderFront(card) {
+  const { ZH2TH, TH2ZH, BLIND_READ, BLIND_LISTEN } = CARD_TYPES;
+  const t = card.cardType;
+
+  if (t === ZH2TH) {
+    el.cardFront.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
+  } else if (t === TH2ZH) {
+    el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div>`;
     setTimeout(() => TTS.speak(card.thai), 300);
-  } else if (type === 'blind_read') {
-    el.cardFront.innerHTML = `
-      <div class="card-thai">${card.thai}</div>
-      <div class="card-hint">看著泰文，試著在心中發音</div>`;
-  } else if (type === 'blind_listen') {
-    el.cardFront.innerHTML = `
-      <div class="card-blind-listen">
-        <div class="listen-icon">🔊</div>
-        <div class="card-hint">仔細聆聽，辨識是哪個泰文字</div>
-      </div>`;
+  } else if (t === BLIND_READ) {
+    el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div><div class="card-hint">看著泰文，試著在心中發音</div>`;
+  } else if (t === BLIND_LISTEN) {
+    el.cardFront.innerHTML = `<div class="card-blind-listen"><div class="listen-icon">🔊</div><div class="card-hint">仔細聆聽，辨識是哪個泰文字</div></div>`;
     setTimeout(() => TTS.speak(card.thai), 500);
   }
 }
 
 function renderBack(card) {
-  el.cardBack.innerHTML = '';
-  const type = card.cardType;
+  const { ZH2TH, TH2ZH, BLIND_READ, BLIND_LISTEN } = CARD_TYPES;
+  const t = card.cardType;
 
-  if (type === 'zh2th') {
-    el.cardBack.innerHTML = `
-      <div class="card-thai">${card.thai}</div>
-      <div class="card-example">
-        <span class="example-thai">${card.example.thai}</span>
-        <span class="example-zh">${card.example.chinese}</span>
-      </div>`;
-  } else if (type === 'th2zh') {
-    el.cardBack.innerHTML = `
-      <div class="card-chinese">${card.chinese}</div>
-      <div class="card-pos">${card.pos}</div>
-      <div class="card-example">
-        <span class="example-thai">${card.example.thai}</span>
-        <span class="example-zh">${card.example.chinese}</span>
-      </div>`;
-  } else if (type === 'blind_read') {
-    el.cardBack.innerHTML = `
-      <div class="card-audio-prompt">翻面後請大聲跟讀 ↓</div>
-      <div class="card-chinese">${card.chinese}</div>
-      <div class="card-pos">${card.pos}</div>`;
-  } else if (type === 'blind_listen') {
-    el.cardBack.innerHTML = `
-      <div class="card-thai">${card.thai}</div>
-      <div class="card-chinese">${card.chinese}</div>`;
+  if (t === ZH2TH) {
+    el.cardBack.innerHTML = `<div class="card-thai">${card.thai}</div>${exampleHTML(card)}`;
+  } else if (t === TH2ZH) {
+    el.cardBack.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>${exampleHTML(card)}`;
+  } else if (t === BLIND_READ) {
+    el.cardBack.innerHTML = `<div class="card-audio-prompt">翻面後請大聲跟讀 ↓</div><div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
+  } else if (t === BLIND_LISTEN) {
+    el.cardBack.innerHTML = `<div class="card-thai">${card.thai}</div><div class="card-chinese">${card.chinese}</div>`;
   }
 }
 
@@ -148,25 +127,18 @@ function flipCard() {
   el.gradeRow.classList.remove('hidden');
   el.btnFlip.classList.add('hidden');
 
-  // 翻面後的動作
-  const type = currentCard.cardType;
-  if (type === 'zh2th' || type === 'blind_read') {
+  const { ZH2TH, BLIND_READ } = CARD_TYPES;
+  if (currentCard.cardType === ZH2TH || currentCard.cardType === BLIND_READ) {
     TTS.speak(currentCard.thai);
-  } else if (type === 'blind_listen') {
-    // 不再重播，等用戶確認
   }
 }
 
 // ── 評分 ──────────────────────────────────────────────────────────
 function gradeCard(grade) {
   recordGrade(currentCard.cardId, grade);
-
-  // grade=0 → 把卡插回隊列後段
   if (grade === 0) {
-    const insertAt = Math.min(currentIdx + 3, queue.length);
-    queue.splice(insertAt, 0, { ...currentCard });
+    queue.splice(Math.min(currentIdx + 3, queue.length), 0, { ...currentCard });
   }
-
   currentIdx++;
   renderCard();
   renderProgress();
@@ -178,20 +150,17 @@ function loadImage(card) {
     el.cardImage.style.display = 'none';
     return;
   }
-  const query = encodeURIComponent(card.imageQuery);
-  const url = `https://source.unsplash.com/400x220/?${query}`;
-
   if (imageCache[card.id]) {
     el.cardImage.src = imageCache[card.id];
     el.cardImage.style.display = 'block';
     return;
   }
-
   el.cardImage.style.display = 'none';
+  const url = `https://source.unsplash.com/400x220/?${encodeURIComponent(card.imageQuery)}`;
   const img = new Image();
   img.onload = () => {
     imageCache[card.id] = url;
-    if (currentCard && currentCard.id === card.id) {
+    if (currentCard?.id === card.id) {
       el.cardImage.src = url;
       el.cardImage.style.display = 'block';
     }
@@ -199,18 +168,15 @@ function loadImage(card) {
   img.src = url;
 }
 
-// ── 進度條 ────────────────────────────────────────────────────────
+// ── 進度條（Set 去重，O(n)） ───────────────────────────────────────
 function renderProgress() {
-  const total = queue.filter((c, i) => {
-    // 計算不重複的卡片數（排除 Again 重插的）
-    return !queue.slice(0, i).some(prev => prev.cardId === c.cardId);
-  }).length;
+  const total = new Set(queue.map(c => c.cardId)).size;
   const done = Math.min(currentIdx, total);
   el.progress.textContent = `${done} / ${total}`;
   el.progressBar.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
 }
 
-// ── 統計頁面 ──────────────────────────────────────────────────────
+// ── 統計 ──────────────────────────────────────────────────────────
 function renderStats() {
   const stats = getStats();
   el.statTotal.textContent = stats.total;
@@ -218,7 +184,7 @@ function renderStats() {
   el.statLearned.textContent = stats.learned;
 }
 
-// ── 設定頁面 ──────────────────────────────────────────────────────
+// ── 設定 ──────────────────────────────────────────────────────────
 function renderSettingsUI() {
   el.settingDailyNew.value = settings.dailyNewCards;
   el.settingImage.checked = settings.imageEnabled;
@@ -228,19 +194,9 @@ function renderSettingsUI() {
 }
 
 function saveSettingsUI() {
-  const cardTypes = [...el.settingCardTypes]
-    .filter(cb => cb.checked)
-    .map(cb => cb.value);
-  if (cardTypes.length === 0) {
-    alert('請至少選擇一種卡片類型');
-    return;
-  }
-  settings = {
-    ...settings,
-    dailyNewCards: parseInt(el.settingDailyNew.value) || 10,
-    imageEnabled: el.settingImage.checked,
-    cardTypes,
-  };
+  const cardTypes = [...el.settingCardTypes].filter(cb => cb.checked).map(cb => cb.value);
+  if (cardTypes.length === 0) { alert('請至少選擇一種卡片類型'); return; }
+  settings = { ...settings, dailyNewCards: parseInt(el.settingDailyNew.value, 10) || 10, imageEnabled: el.settingImage.checked, cardTypes };
   saveSettings(settings);
   showScreen('study');
   loadStudyScreen();
@@ -250,10 +206,7 @@ function saveSettingsUI() {
 function showScreen(name) {
   Object.values(el.screen).forEach(s => s.classList.add('hidden'));
   el.screen[name].classList.remove('hidden');
-  el.navBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.nav === name);
-  });
-
+  el.navBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
   if (name === 'stats') renderStats();
   if (name === 'settings') renderSettingsUI();
 }
@@ -263,34 +216,22 @@ function showEmptyState(show) {
   el.card.classList.toggle('hidden', show);
   el.btnFlip.classList.toggle('hidden', show);
   el.gradeRow.classList.add('hidden');
-  el.progress.textContent = show ? '完成 🎉' : '';
+  if (show) el.progress.textContent = '完成 🎉';
 }
 
 // ── 事件綁定 ──────────────────────────────────────────────────────
 function bindEvents() {
-  // 翻牌
   el.btnFlip.addEventListener('click', flipCard);
   el.card.addEventListener('click', () => { if (!isFlipped) flipCard(); });
+  el.btnAudio.addEventListener('click', () => { if (currentCard) TTS.speak(currentCard.thai); });
 
-  // 音頻按鈕
-  el.btnAudio.addEventListener('click', () => {
-    if (currentCard) TTS.speak(currentCard.thai);
-  });
-
-  // 評分按鈕
   document.querySelectorAll('[data-grade]').forEach(btn => {
-    btn.addEventListener('click', () => gradeCard(parseInt(btn.dataset.grade)));
+    btn.addEventListener('click', () => gradeCard(parseInt(btn.dataset.grade, 10)));
   });
 
-  // 導航
-  el.navBtns.forEach(btn => {
-    btn.addEventListener('click', () => showScreen(btn.dataset.nav));
-  });
-
-  // 設定儲存
+  el.navBtns.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.nav)));
   el.btnSaveSettings.addEventListener('click', saveSettingsUI);
 
-  // 重置所有資料
   el.btnResetAll.addEventListener('click', () => {
     if (confirm('確定要清除所有學習記錄嗎？此操作無法復原。')) {
       localStorage.removeItem(SRS_STORAGE_KEY);
@@ -299,20 +240,17 @@ function bindEvents() {
     }
   });
 
-  // 鍵盤快捷鍵
   document.addEventListener('keydown', (e) => {
-    const screen = Object.entries(el.screen).find(([, s]) => !s.classList.contains('hidden'));
-    if (!screen || screen[0] !== 'study') return;
+    const [name] = Object.entries(el.screen).find(([, s]) => !s.classList.contains('hidden')) || [];
+    if (name !== 'study') return;
 
     if (e.code === 'Space' || e.code === 'Enter') {
       e.preventDefault();
       if (!isFlipped) flipCard();
     }
     if (isFlipped) {
-      if (e.key === '1') gradeCard(0); // Again
-      if (e.key === '2') gradeCard(1); // Hard
-      if (e.key === '3') gradeCard(2); // Good
-      if (e.key === '4') gradeCard(3); // Easy
+      const gradeMap = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      if (e.key in gradeMap) gradeCard(gradeMap[e.key]);
     }
     if (e.key === 'r' || e.key === 'R') {
       if (currentCard) TTS.speak(currentCard.thai);
