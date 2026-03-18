@@ -1,5 +1,5 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v1';
+const CACHE = 'thai-easy-card-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   '/js/vocabulary.js',
   '/js/srs.js',
   '/js/tts.js',
+  '/js/notification.js',
   '/js/app.js',
   'https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap',
 ];

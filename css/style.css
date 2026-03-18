@@ -54,7 +54,7 @@ nav button {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 7px 4px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-sub);
   cursor: pointer;
   transition: all .15s;
@@ -226,27 +226,28 @@ main { flex: 1; padding: 20px; }
   border: 1px solid var(--border);
 }
 
-/* ── 評分按鈕 ───────────────────────────── */
+/* ── 評分按鈕（2×2） ────────────────────── */
 #grade-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 .btn-grade {
   flex: none;
   border: none;
-  border-radius: 10px;
-  padding: 12px 4px 8px;
+  border-radius: 14px;
+  padding: 18px 8px 14px;
+  min-height: 72px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   transition: all .15s;
 }
 .btn-grade:active { transform: scale(.95); }
-.btn-grade .grade-label { font-size: 12px; font-weight: 700; }
-.btn-grade .grade-sub   { font-size: 10px; opacity: .7; }
+.btn-grade .grade-label { font-size: 15px; font-weight: 700; }
+.btn-grade .grade-sub   { font-size: 12px; opacity: .7; }
 
 .grade-again { background: #FFE5E5; color: #C83A3A; }
 .grade-hard  { background: #FFF0DC; color: #B86A00; }
@@ -313,6 +314,61 @@ kbd {
 .tone-dot.low  { background: var(--blue); }
 .tone-dot.mid  { background: var(--green); }
 .tone-dot.high { background: var(--red); }
+
+/* ── 里程進度 ────────────────────────────── */
+.milestone-section {
+  margin-bottom: 24px;
+}
+.milestone-section h3 {
+  font-size: 13px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.milestone-bar-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.milestone-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.milestone-bar-label span:last-child { color: var(--text-sub); }
+#milestone-bar-bg {
+  height: 10px;
+  background: var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+#milestone-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #E09A60);
+  border-radius: 5px;
+  transition: width .5s ease;
+  width: 0%;
+}
+.streak-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.streak-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  text-align: center;
+}
+.streak-icon { font-size: 22px; margin-bottom: 4px; }
+.streak-num  { font-size: 24px; font-weight: 700; color: var(--accent); }
+.streak-label { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
 
 /* ── 設定頁 ─────────────────────────────── */
 .settings-section {
@@ -386,15 +442,99 @@ kbd {
   font-size: 15px;
   padding: 14px;
 }
+.btn-notify {
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 6px;
+}
+.notify-hint {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 6px;
+  line-height: 1.5;
+}
 
 /* ── 聲調顏色字母 ────────────────────────── */
 .tone-low  { color: var(--blue); }
 .tone-mid  { color: var(--green); }
 .tone-high { color: var(--red); }
 
+/* ── 主題分頁 ────────────────────────────── */
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.topic-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 12px 0;
+  cursor: pointer;
+  transition: box-shadow .15s;
+  overflow: hidden;
+}
+.topic-card:active { box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+.topic-emoji { font-size: 28px; margin-bottom: 6px; }
+.topic-name  { font-size: 15px; font-weight: 700; }
+.topic-count { font-size: 12px; color: var(--text-sub); margin-bottom: 10px; }
+.topic-progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+.topic-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width .3s;
+}
+
+/* 主題練習區 */
+.topic-back-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.btn-back {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.topic-practice-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#topic-card {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  transform-style: preserve-3d;
+  transition: transform .45s ease;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+#topic-card.flipped { transform: rotateY(180deg); }
+
+#topic-grade-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
 /* ── RWD ────────────────────────────────── */
 @media (max-width: 400px) {
   .card-thai { font-size: 36px; }
   .card-chinese { font-size: 24px; }
-  #grade-row .btn-grade .grade-sub { display: none; }
 }

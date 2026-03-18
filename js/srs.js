@@ -1,12 +1,18 @@
 // SM-2 間隔重複演算法（Spaced Repetition System）
-const SRS_STORAGE_KEY = 'thaiEasyCard_srs';
-const SETTINGS_KEY = 'thaiEasyCard_settings';
+const SRS_STORAGE_KEY  = 'thaiEasyCard_srs';
+const SETTINGS_KEY     = 'thaiEasyCard_settings';
+const DAILY_LOG_KEY    = 'thaiEasyCard_dailyLog';
+const STREAK_KEY       = 'thaiEasyCard_streak';
 const MS_DAY = 86400000;
+const VOCAB_TOTAL = 83;
 
 const DEFAULT_SETTINGS = {
   dailyNewCards: 10,
   cardTypes: ['zh2th', 'th2zh', 'blind_read', 'blind_listen'],
   imageEnabled: true,
+  notificationEnabled: false,
+  notificationHour: 20,
+  notificationMinute: 0,
 };
 
 // ── 輕量 SRS 快取（避免重複 JSON.parse） ──────────────────────────
@@ -50,6 +56,73 @@ function getTodayNewKey() {
 
 function getStoredInt(key) {
   return parseInt(localStorage.getItem(key) || '0', 10);
+}
+
+function getTodayDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// ── 每日記錄 ──────────────────────────────────────────────────────
+function getDailyLog() {
+  try {
+    return JSON.parse(localStorage.getItem(DAILY_LOG_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveDailyLog(log) {
+  localStorage.setItem(DAILY_LOG_KEY, JSON.stringify(log));
+}
+
+function updateDailyLog(isNewCard) {
+  const today = getTodayDateStr();
+  const log = getDailyLog();
+  if (!log[today]) log[today] = { reviewed: 0, newLearned: 0, completed: false };
+  log[today].reviewed += 1;
+  if (isNewCard) log[today].newLearned += 1;
+  saveDailyLog(log);
+}
+
+function markTodayCompleted() {
+  const today = getTodayDateStr();
+  const log = getDailyLog();
+  if (!log[today]) log[today] = { reviewed: 0, newLearned: 0, completed: false };
+  log[today].completed = true;
+  saveDailyLog(log);
+  updateStreak();
+}
+
+// ── 連續天數 ──────────────────────────────────────────────────────
+function getStreakData() {
+  try {
+    return JSON.parse(localStorage.getItem(STREAK_KEY) || '{"current":0,"lastActiveDate":"","longest":0}');
+  } catch {
+    return { current: 0, lastActiveDate: '', longest: 0 };
+  }
+}
+
+function updateStreak() {
+  const today = getTodayDateStr();
+  const streak = getStreakData();
+
+  if (streak.lastActiveDate === today) return; // 今天已更新
+
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  if (streak.lastActiveDate === yesterday) {
+    streak.current += 1;
+  } else {
+    streak.current = 1;
+  }
+  streak.lastActiveDate = today;
+  streak.longest = Math.max(streak.longest, streak.current);
+  localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
 }
 
 // ── SRS 核心 ──────────────────────────────────────────────────────
@@ -128,27 +201,49 @@ function getTodayQueue(vocabList, settings) {
 function recordGrade(cardId, grade) {
   const srsData = getSRSData();
   const current = srsData[cardId] || initCardState();
+  const isNew = !current.lastReview;
   srsData[cardId] = applyGrade(current, grade);
   saveSRSData(srsData);
 
-  if (!current.lastReview) {
+  if (isNew) {
     const key = getTodayNewKey();
     localStorage.setItem(key, getStoredInt(key) + 1);
   }
+
+  updateDailyLog(isNew);
 }
 
 function getStats() {
   const srsData = getSRSData();
   const now = Date.now();
-  let total = 0, due = 0, learned = 0;
+  let total = 0, due = 0, learned = 0, mastered = 0;
 
-  for (const state of Object.values(srsData)) {
+  // Count unique vocab IDs that have been seen
+  const seenVocabIds = new Set();
+  for (const [cardId, state] of Object.entries(srsData)) {
     total++;
     if (state.due <= now) due++;
     if (state.reps > 0) learned++;
+    if (state.interval >= 21) mastered++;
+    const vocabId = cardId.split('__')[0];
+    if (state.lastReview) seenVocabIds.add(vocabId);
   }
 
-  return { total, due, learned };
+  const streakData = getStreakData();
+  const todayLog = getDailyLog()[getTodayDateStr()] || { reviewed: 0, newLearned: 0 };
+
+  return {
+    total,
+    due,
+    learned,
+    mastered,
+    vocabTotal: VOCAB_TOTAL,
+    vocabLearned: seenVocabIds.size,
+    streak: streakData.current,
+    longestStreak: streakData.longest,
+    todayReviewed: todayLog.reviewed,
+    todayNew: todayLog.newLearned,
+  };
 }
 
 function shuffle(arr) {
