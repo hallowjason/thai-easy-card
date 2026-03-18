@@ -28,6 +28,7 @@
 <nav>
   <button data-nav="study" class="active">📚 學習</button>
   <button data-nav="stats">📊 統計</button>
+  <button data-nav="topics">🗂 主題</button>
   <button data-nav="settings">⚙️ 設定</button>
 </nav>
 
@@ -58,7 +59,7 @@
     <div id="empty-state" class="hidden">
       <div class="empty-icon">🎉</div>
       <div class="empty-title">今日完成！</div>
-      <div class="empty-sub">所有卡片已複習完畢，明天繼續保持！</div>
+      <div id="empty-sub" class="empty-sub">所有卡片已複習完畢，明天繼續保持！</div>
     </div>
 
     <!-- 操作按鈕列 -->
@@ -111,6 +112,37 @@
       </div>
     </div>
 
+    <!-- 里程進度 -->
+    <div class="milestone-section">
+      <h3>詞彙里程</h3>
+      <div class="milestone-bar-wrap">
+        <div class="milestone-bar-label">
+          <span id="milestone-text">0 / 83 詞彙</span>
+          <span id="milestone-pct">0%</span>
+        </div>
+        <div id="milestone-bar-bg">
+          <div id="milestone-bar"></div>
+        </div>
+      </div>
+      <div class="streak-row">
+        <div class="streak-card">
+          <div class="streak-icon">🔥</div>
+          <div class="streak-num" id="streak-current">0</div>
+          <div class="streak-label">連續天數</div>
+        </div>
+        <div class="streak-card">
+          <div class="streak-icon">🏆</div>
+          <div class="streak-num" id="streak-longest">0</div>
+          <div class="streak-label">最長連續</div>
+        </div>
+        <div class="streak-card">
+          <div class="streak-icon">📖</div>
+          <div class="streak-num" id="streak-today">0</div>
+          <div class="streak-label">今日複習</div>
+        </div>
+      </div>
+    </div>
+
     <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">聲調顏色說明</h3>
     <div class="tone-legend">
       <div class="tone-item">
@@ -148,6 +180,69 @@
     </div>
   </section>
 
+  <!-- ── 主題頁 ── -->
+  <section id="screen-topics" class="hidden">
+    <!-- 主題列表 -->
+    <div id="topic-list">
+      <div class="topic-grid" id="topic-grid"></div>
+    </div>
+
+    <!-- 主題練習區（點擊主題後顯示） -->
+    <div id="topic-practice" class="hidden">
+      <div class="topic-back-row">
+        <button class="btn-back" id="btn-topic-back">← 返回</button>
+        <span class="topic-practice-title" id="topic-practice-title"></span>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-bar-bg"><div id="topic-progress-bar"></div></div>
+        <span id="topic-progress">0 / 0</span>
+      </div>
+
+      <div class="card-wrap">
+        <div id="topic-card">
+          <div class="card-side" id="topic-card-front">
+            <span id="topic-card-type-label"></span>
+            <div id="topic-front-content"></div>
+          </div>
+          <div class="card-side" id="topic-card-back">
+            <div id="topic-back-content"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="topic-empty" class="hidden" style="text-align:center;padding:40px 20px">
+        <div style="font-size:40px;margin-bottom:10px">✅</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">主題練習完成！</div>
+        <div style="font-size:14px;color:var(--text-sub)">本組詞彙已全部複習</div>
+      </div>
+
+      <div class="action-row" id="topic-action-row">
+        <button class="btn btn-primary" id="btn-topic-flip">翻牌查看</button>
+        <button class="btn btn-audio" id="btn-topic-audio" title="播放泰語發音">🔊</button>
+      </div>
+
+      <div id="topic-grade-row" class="hidden">
+        <button class="btn-grade grade-again" data-tgrade="0">
+          <span class="grade-label">不記得</span>
+          <span class="grade-sub">立刻重來</span>
+        </button>
+        <button class="btn-grade grade-hard" data-tgrade="1">
+          <span class="grade-label">困難</span>
+          <span class="grade-sub">稍後再見</span>
+        </button>
+        <button class="btn-grade grade-good" data-tgrade="2">
+          <span class="grade-label">記得</span>
+          <span class="grade-sub">幾天後</span>
+        </button>
+        <button class="btn-grade grade-easy" data-tgrade="3">
+          <span class="grade-label">輕鬆</span>
+          <span class="grade-sub">數週後</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 設定頁 ── -->
   <section id="screen-settings" class="hidden">
     <div class="settings-section">
@@ -180,6 +275,24 @@
       </div>
     </div>
 
+    <div class="settings-section">
+      <h3>每日提醒</h3>
+      <div class="setting-row">
+        <label>啟用每日提醒</label>
+        <input type="checkbox" id="setting-notification">
+      </div>
+      <div id="notification-time-row" class="setting-row hidden">
+        <label>提醒時間</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="setting-notif-hour" min="0" max="23" value="20" style="width:52px">
+          <span>:</span>
+          <input type="number" id="setting-notif-minute" min="0" max="59" value="0" style="width:52px">
+        </div>
+      </div>
+      <button class="btn-notify" id="btn-request-permission">授權瀏覽器通知權限</button>
+      <p class="notify-hint">注意：App 需保持在瀏覽器分頁中才能收到提醒。關閉分頁後提醒將停止。</p>
+    </div>
+
     <button class="btn btn-save btn-full" id="btn-save-settings">儲存設定</button>
     <button class="btn btn-danger btn-full" id="btn-reset-all">清除所有學習記錄</button>
   </section>
@@ -189,6 +302,7 @@
 <script src="js/vocabulary.js"></script>
 <script src="js/srs.js"></script>
 <script src="js/tts.js"></script>
+<script src="js/notification.js"></script>
 <script src="js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
