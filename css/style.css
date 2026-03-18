@@ -227,7 +227,7 @@ main { flex: 1; padding: 20px; }
 }
 
 /* ── 評分按鈕（2×2） ────────────────────── */
-#grade-row {
+.grade-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -527,11 +527,7 @@ kbd {
 }
 #topic-card.flipped { transform: rotateY(180deg); }
 
-#topic-grade-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
+/* #topic-grade-row shares .grade-row class — no extra rules needed */
 
 /* ── RWD ────────────────────────────────── */
 @media (max-width: 400px) {

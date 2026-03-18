@@ -58,21 +58,29 @@ function getStoredInt(key) {
   return parseInt(localStorage.getItem(key) || '0', 10);
 }
 
-function getTodayDateStr() {
-  const d = new Date();
+function formatDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function getTodayDateStr() {
+  return formatDateStr(new Date());
+}
+
 // ── 每日記錄 ──────────────────────────────────────────────────────
+let _dailyLogCache = null;
+
 function getDailyLog() {
+  if (_dailyLogCache) return _dailyLogCache;
   try {
-    return JSON.parse(localStorage.getItem(DAILY_LOG_KEY) || '{}');
+    _dailyLogCache = JSON.parse(localStorage.getItem(DAILY_LOG_KEY) || '{}');
   } catch {
-    return {};
+    _dailyLogCache = {};
   }
+  return _dailyLogCache;
 }
 
 function saveDailyLog(log) {
+  _dailyLogCache = log;
   localStorage.setItem(DAILY_LOG_KEY, JSON.stringify(log));
 }
 
@@ -89,6 +97,7 @@ function markTodayCompleted() {
   const today = getTodayDateStr();
   const log = getDailyLog();
   if (!log[today]) log[today] = { reviewed: 0, newLearned: 0, completed: false };
+  if (log[today].completed) return; // already marked today, skip re-write
   log[today].completed = true;
   saveDailyLog(log);
   updateStreak();
@@ -109,11 +118,9 @@ function updateStreak() {
 
   if (streak.lastActiveDate === today) return; // 今天已更新
 
-  const yesterday = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  })();
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterday = formatDateStr(d);
 
   if (streak.lastActiveDate === yesterday) {
     streak.current += 1;
