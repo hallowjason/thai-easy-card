@@ -3,6 +3,8 @@
 
 // ── 卡片類型常數 ──────────────────────────────────────────────────
 const CARD_TYPES = { ZH2TH: 'zh2th', TH2ZH: 'th2zh', BLIND_READ: 'blind_read', BLIND_LISTEN: 'blind_listen' };
+// Topic practice always uses ZH2TH — one card type keeps the session focused
+const TOPIC_CARD_TYPE = CARD_TYPES.ZH2TH;
 const CARD_TYPE_LABEL = {
   [CARD_TYPES.ZH2TH]:       '中 → 泰',
   [CARD_TYPES.TH2ZH]:       '泰 → 中',
@@ -384,7 +386,7 @@ function flipTopicCard() {
 }
 
 function gradeTopicCard(grade) {
-  const cardId = generateCardId(topicCard.id, CARD_TYPES.ZH2TH);
+  const cardId = generateCardId(topicCard.id, TOPIC_CARD_TYPE);
   recordGrade(cardId, grade);
   if (grade === 0) {
     topicQueue.splice(Math.min(topicIdx + 3, topicQueue.length), 0, { ...topicCard });
