@@ -3,8 +3,9 @@ const SRS_STORAGE_KEY  = 'thaiEasyCard_srs';
 const SETTINGS_KEY     = 'thaiEasyCard_settings';
 const DAILY_LOG_KEY    = 'thaiEasyCard_dailyLog';
 const STREAK_KEY       = 'thaiEasyCard_streak';
+const CUSTOM_VOCAB_KEY = 'thaiEasyCard_customVocab';
 const MS_DAY = 86400000;
-const VOCAB_TOTAL = 83;
+const VOCAB_TOTAL = 153;
 
 const DEFAULT_SETTINGS = {
   dailyNewCards: 10,
@@ -251,6 +252,40 @@ function getStats() {
     todayReviewed: todayLog.reviewed,
     todayNew: todayLog.newLearned,
   };
+}
+
+// ── 自訂詞彙 ──────────────────────────────────────────────────────
+function getCustomVocab() {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_VOCAB_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveCustomVocab(arr) {
+  localStorage.setItem(CUSTOM_VOCAB_KEY, JSON.stringify(arr));
+}
+
+function addCustomWord(word) {
+  const list = getCustomVocab();
+  const id = 'custom_' + Date.now().toString(36);
+  const entry = {
+    id,
+    thai: word.thai,
+    chinese: word.chinese,
+    pos: word.pos || '名詞',
+    category: word.category || 'greeting',
+    example: { thai: word.exampleThai || '', chinese: word.exampleChinese || '' },
+    imageQuery: word.thai,
+    toneClass: null,
+    custom: true,
+  };
+  list.push(entry);
+  saveCustomVocab(list);
+  return entry;
+}
+
+function deleteCustomWord(id) {
+  saveCustomVocab(getCustomVocab().filter(w => w.id !== id));
 }
 
 function shuffle(arr) {

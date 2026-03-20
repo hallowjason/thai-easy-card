@@ -1,5 +1,5 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v2';
+const CACHE = 'thai-easy-card-v3';
 const ASSETS = [
   '/',
   '/index.html',
