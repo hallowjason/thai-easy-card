@@ -6,16 +6,11 @@
   <title>Thai Easy Card — 泰文單字卡</title>
   <meta name="description" content="中/泰雙語 SRS 單字卡，搭配原聲 TTS，徹底戒除拼音，直接建立泰語直覺。">
   <meta name="theme-color" content="#C8703A">
-
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <!-- 字型 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,6 +23,7 @@
 <nav>
   <button data-nav="study" class="active">📚 學習</button>
   <button data-nav="stats">📊 統計</button>
+  <button data-nav="alphabet">🔤 字母</button>
   <button data-nav="topics">🗂 主題</button>
   <button data-nav="settings">⚙️ 設定</button>
 </nav>
@@ -40,8 +36,6 @@
       <div class="progress-bar-bg"><div id="progress-bar"></div></div>
       <span id="progress">0 / 0</span>
     </div>
-
-    <!-- 卡片 -->
     <div class="card-wrap">
       <div id="card">
         <div class="card-side" id="card-front">
@@ -54,21 +48,15 @@
         </div>
       </div>
     </div>
-
-    <!-- 空狀態 -->
     <div id="empty-state" class="hidden">
       <div class="empty-icon">🎉</div>
       <div class="empty-title">今日完成！</div>
       <div id="empty-sub" class="empty-sub">所有卡片已複習完畢，明天繼續保持！</div>
     </div>
-
-    <!-- 操作按鈕列 -->
     <div class="action-row">
       <button class="btn btn-primary" id="btn-flip">翻牌查看</button>
       <button class="btn btn-audio" id="btn-audio" title="播放泰語發音">🔊</button>
     </div>
-
-    <!-- 評分列（翻牌後顯示） -->
     <div id="grade-row" class="grade-row hidden">
       <button class="btn-grade grade-again" data-grade="0">
         <span class="grade-label">不記得</span>
@@ -87,7 +75,6 @@
         <span class="grade-sub">數週後</span>
       </button>
     </div>
-
     <div class="shortcut-hint">
       <kbd>空白</kbd> 翻牌 &nbsp;｜&nbsp;
       <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 評分 &nbsp;｜&nbsp;
@@ -111,13 +98,11 @@
         <div class="stat-label">總卡片</div>
       </div>
     </div>
-
-    <!-- 里程進度 -->
     <div class="milestone-section">
       <h3>詞彙里程</h3>
       <div class="milestone-bar-wrap">
         <div class="milestone-bar-label">
-          <span id="milestone-text">0 / 83 詞彙</span>
+          <span id="milestone-text">0 / 153 詞彙</span>
           <span id="milestone-pct">0%</span>
         </div>
         <div id="milestone-bar-bg">
@@ -142,23 +127,12 @@
         </div>
       </div>
     </div>
-
     <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">聲調顏色說明</h3>
     <div class="tone-legend">
-      <div class="tone-item">
-        <div class="tone-dot low"></div>
-        <span>🔵 低音字（寒冷、沉向海底）</span>
-      </div>
-      <div class="tone-item">
-        <div class="tone-dot mid"></div>
-        <span>🟢 中音字（中性基準）</span>
-      </div>
-      <div class="tone-item">
-        <div class="tone-dot high"></div>
-        <span>🔴 高音字（炎熱、高漲）</span>
-      </div>
+      <div class="tone-item"><div class="tone-dot low"></div><span>🔵 低音字（寒冷、沉向海底）</span></div>
+      <div class="tone-item"><div class="tone-dot mid"></div><span>🟢 中音字（中性基準）</span></div>
+      <div class="tone-item"><div class="tone-dot high"></div><span>🔴 高音字（炎熱、高漲）</span></div>
     </div>
-
     <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">卡片類型說明</h3>
     <div style="display:flex;flex-direction:column;gap:8px">
       <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
@@ -171,34 +145,77 @@
       </div>
       <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
         <strong>盲讀卡</strong>
-        <span style="font-size:13px;color:var(--text-sub)">只看泰文，試著在心中默念發音，建立肌肉記憶</span>
+        <span style="font-size:13px;color:var(--text-sub)">只看泰文，試著在心中默念發音</span>
       </div>
       <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
         <strong>盲聽卡</strong>
-        <span style="font-size:13px;color:var(--text-sub)">只聽音頻，辨識是哪個泰文字，繞過母語干擾</span>
+        <span style="font-size:13px;color:var(--text-sub)">只聽音頻，辨識是哪個泰文字</span>
       </div>
     </div>
   </section>
 
+  <!-- ── 字母頁 ── -->
+  <section id="screen-alphabet" class="hidden">
+    <div class="alpha-filter" id="alpha-filter">
+      <button class="alpha-filter-btn active" data-tone="all">全部</button>
+      <button class="alpha-filter-btn" data-tone="mid">🟢 中音</button>
+      <button class="alpha-filter-btn" data-tone="low">🔵 低音</button>
+      <button class="alpha-filter-btn" data-tone="high">🔴 高音</button>
+    </div>
+    <p class="alpha-intro">點擊卡片可展開記憶口訣，🔊 按鈕播放發音。聲母/末音格式：初始聲母／作為尾音時的發音。</p>
+    <div class="alpha-grid" id="alpha-grid"></div>
+  </section>
+
   <!-- ── 主題頁 ── -->
   <section id="screen-topics" class="hidden">
-    <!-- 主題列表 -->
     <div id="topic-list">
+      <!-- 自訂詞彙快捷列 -->
+      <div class="custom-vocab-bar">
+        <span class="custom-vocab-count" id="custom-vocab-count">自訂詞彙 0 個</span>
+        <button class="btn-add-custom" id="btn-show-cv-form">＋ 新增詞彙</button>
+      </div>
+
+      <!-- 新增詞彙表單（預設隱藏） -->
+      <div id="cv-form-panel" class="cv-form-panel hidden">
+        <h3 class="cv-form-title">新增自訂詞彙</h3>
+        <div class="cv-form-grid">
+          <input class="cv-input" type="text" id="cv-thai" placeholder="泰文（必填）" autocomplete="off">
+          <input class="cv-input" type="text" id="cv-chinese" placeholder="中文意思（必填）" autocomplete="off">
+          <select class="cv-input" id="cv-pos">
+            <option value="名詞">名詞</option>
+            <option value="動詞">動詞</option>
+            <option value="形容詞">形容詞</option>
+            <option value="副詞">副詞</option>
+            <option value="代詞">代詞</option>
+            <option value="感嘆詞">感嘆詞</option>
+            <option value="疑問詞">疑問詞</option>
+            <option value="數詞">數詞</option>
+            <option value="語氣詞">語氣詞</option>
+          </select>
+          <select class="cv-input" id="cv-category"></select>
+          <input class="cv-input" type="text" id="cv-example-thai" placeholder="例句泰文（選填）" autocomplete="off">
+          <input class="cv-input" type="text" id="cv-example-zh" placeholder="例句中文（選填）" autocomplete="off">
+        </div>
+        <div class="cv-form-actions">
+          <button class="btn btn-primary" id="btn-cv-save" style="flex:1">新增</button>
+          <button class="btn" id="btn-cv-cancel" style="background:var(--bg2);border:1px solid var(--border);flex:1">取消</button>
+        </div>
+        <!-- 已新增的自訂詞彙列表 -->
+        <div id="cv-list"></div>
+      </div>
+
       <div class="topic-grid" id="topic-grid"></div>
     </div>
 
-    <!-- 主題練習區（點擊主題後顯示） -->
     <div id="topic-practice" class="hidden">
       <div class="topic-back-row">
         <button class="btn-back" id="btn-topic-back">← 返回</button>
         <span class="topic-practice-title" id="topic-practice-title"></span>
       </div>
-
       <div class="progress-wrap">
         <div class="progress-bar-bg"><div id="topic-progress-bar"></div></div>
         <span id="topic-progress">0 / 0</span>
       </div>
-
       <div class="card-wrap">
         <div id="topic-card">
           <div class="card-side" id="topic-card-front">
@@ -210,18 +227,15 @@
           </div>
         </div>
       </div>
-
       <div id="topic-empty" class="hidden" style="text-align:center;padding:40px 20px">
         <div style="font-size:40px;margin-bottom:10px">✅</div>
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">主題練習完成！</div>
         <div style="font-size:14px;color:var(--text-sub)">本組詞彙已全部複習</div>
       </div>
-
       <div class="action-row" id="topic-action-row">
         <button class="btn btn-primary" id="btn-topic-flip">翻牌查看</button>
         <button class="btn btn-audio" id="btn-topic-audio" title="播放泰語發音">🔊</button>
       </div>
-
       <div id="topic-grade-row" class="grade-row hidden">
         <button class="btn-grade grade-again" data-tgrade="0">
           <span class="grade-label">不記得</span>
@@ -256,25 +270,15 @@
         <input type="checkbox" id="setting-image" checked>
       </div>
     </div>
-
     <div class="settings-section">
       <h3>啟用卡片類型</h3>
       <div class="card-type-grid">
-        <label class="card-type-option">
-          <input type="checkbox" name="cardType" value="zh2th" checked> 中 → 泰
-        </label>
-        <label class="card-type-option">
-          <input type="checkbox" name="cardType" value="th2zh" checked> 泰 → 中
-        </label>
-        <label class="card-type-option">
-          <input type="checkbox" name="cardType" value="blind_read" checked> 盲讀卡
-        </label>
-        <label class="card-type-option">
-          <input type="checkbox" name="cardType" value="blind_listen" checked> 盲聽卡
-        </label>
+        <label class="card-type-option"><input type="checkbox" name="cardType" value="zh2th" checked> 中 → 泰</label>
+        <label class="card-type-option"><input type="checkbox" name="cardType" value="th2zh" checked> 泰 → 中</label>
+        <label class="card-type-option"><input type="checkbox" name="cardType" value="blind_read" checked> 盲讀卡</label>
+        <label class="card-type-option"><input type="checkbox" name="cardType" value="blind_listen" checked> 盲聽卡</label>
       </div>
     </div>
-
     <div class="settings-section">
       <h3>每日提醒</h3>
       <div class="setting-row">
@@ -290,9 +294,8 @@
         </div>
       </div>
       <button class="btn-notify" id="btn-request-permission">授權瀏覽器通知權限</button>
-      <p class="notify-hint">注意：App 需保持在瀏覽器分頁中才能收到提醒。關閉分頁後提醒將停止。</p>
+      <p class="notify-hint">注意：App 需保持在瀏覽器分頁中才能收到提醒。</p>
     </div>
-
     <button class="btn btn-save btn-full" id="btn-save-settings">儲存設定</button>
     <button class="btn btn-danger btn-full" id="btn-reset-all">清除所有學習記錄</button>
   </section>

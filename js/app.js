@@ -26,11 +26,15 @@ let topicIdx = 0;
 let topicFlipped = false;
 let topicCard = null;
 
+// ── 字母頁狀態 ────────────────────────────────────────────────────
+let alphaFilter = 'all';
+
 // ── DOM ───────────────────────────────────────────────────────────
 const el = {
   screen: {
     study:    document.getElementById('screen-study'),
     stats:    document.getElementById('screen-stats'),
+    alphabet: document.getElementById('screen-alphabet'),
     topics:   document.getElementById('screen-topics'),
     settings: document.getElementById('screen-settings'),
   },
@@ -68,6 +72,9 @@ const el = {
   settingNotifHour:    document.getElementById('setting-notif-hour'),
   settingNotifMinute:  document.getElementById('setting-notif-minute'),
   btnRequestPerm:      document.getElementById('btn-request-permission'),
+  // 字母頁
+  alphaGrid:   document.getElementById('alpha-grid'),
+  alphaFilter: document.getElementById('alpha-filter'),
   // 主題
   topicGrid:       document.getElementById('topic-grid'),
   topicList:       document.getElementById('topic-list'),
@@ -85,12 +92,31 @@ const el = {
   btnTopicFlip:    document.getElementById('btn-topic-flip'),
   btnTopicAudio:   document.getElementById('btn-topic-audio'),
   btnTopicBack:    document.getElementById('btn-topic-back'),
+  // 自訂詞彙
+  customVocabCount: document.getElementById('custom-vocab-count'),
+  btnShowCvForm:    document.getElementById('btn-show-cv-form'),
+  cvFormPanel:      document.getElementById('cv-form-panel'),
+  cvThai:           document.getElementById('cv-thai'),
+  cvChinese:        document.getElementById('cv-chinese'),
+  cvPos:            document.getElementById('cv-pos'),
+  cvCategory:       document.getElementById('cv-category'),
+  cvExampleThai:    document.getElementById('cv-example-thai'),
+  cvExampleZh:      document.getElementById('cv-example-zh'),
+  btnCvSave:        document.getElementById('btn-cv-save'),
+  btnCvCancel:      document.getElementById('btn-cv-cancel'),
+  cvList:           document.getElementById('cv-list'),
 };
+
+// ── 合併詞彙（內建 + 自訂）───────────────────────────────────────
+function getAllVocab() {
+  return [...VOCABULARY, ...getCustomVocab()];
+}
 
 // ── 初始化 ────────────────────────────────────────────────────────
 async function init() {
   await TTS.init();
   settings = getSettings();
+  populateCvCategorySelect();
   loadStudyScreen();
   bindEvents();
   showScreen('study');
@@ -99,7 +125,7 @@ async function init() {
 
 function loadStudyScreen() {
   settings = getSettings();
-  queue = getTodayQueue(VOCABULARY, settings);
+  queue = getTodayQueue(getAllVocab(), settings);
   currentIdx = 0;
   renderCard();
   renderProgress();
@@ -114,7 +140,13 @@ function renderCard() {
   showEmptyState(false);
   isFlipped = false;
   currentCard = queue[currentIdx];
+
+  // 瞬間重置卡片位置，避免前一張背面在動畫中閃過
+  el.card.style.transition = 'none';
   el.card.classList.remove('flipped');
+  void el.card.offsetWidth; // force reflow
+  el.card.style.transition = '';
+
   el.gradeRow.classList.add('hidden');
   el.btnFlip.classList.remove('hidden');
   el.cardType.textContent = CARD_TYPE_LABEL[currentCard.cardType] || '';
@@ -124,6 +156,7 @@ function renderCard() {
 }
 
 function exampleHTML(card) {
+  if (!card.example || (!card.example.thai && !card.example.chinese)) return '';
   return `<div class="card-example">
     <span class="example-thai">${card.example.thai}</span>
     <span class="example-zh">${card.example.chinese}</span>
@@ -210,7 +243,7 @@ function loadImage(card) {
   img.src = url;
 }
 
-// ── 進度條（Set 去重，O(n)） ───────────────────────────────────────
+// ── 進度條 ────────────────────────────────────────────────────────
 function renderProgress() {
   const total = new Set(queue.map(c => c.cardId)).size;
   const done = Math.min(currentIdx, total);
@@ -225,13 +258,12 @@ function renderStats() {
   el.statDue.textContent = stats.due;
   el.statLearned.textContent = stats.learned;
 
-  // 里程進度
-  const pct = Math.round((stats.vocabLearned / stats.vocabTotal) * 100);
+  const vocabTotal = stats.vocabTotal + getCustomVocab().length;
+  const pct = vocabTotal > 0 ? Math.round((stats.vocabLearned / vocabTotal) * 100) : 0;
   el.milestoneBar.style.width = `${pct}%`;
-  el.milestoneText.textContent = `${stats.vocabLearned} / ${stats.vocabTotal} 詞彙`;
+  el.milestoneText.textContent = `${stats.vocabLearned} / ${vocabTotal} 詞彙`;
   el.milestonePct.textContent = `${pct}%`;
 
-  // 連續天數
   el.streakCurrent.textContent = stats.streak;
   el.streakLongest.textContent = stats.longestStreak;
   el.streakToday.textContent = stats.todayReviewed;
@@ -273,9 +305,10 @@ function showScreen(name) {
   Object.values(el.screen).forEach(s => s.classList.add('hidden'));
   el.screen[name].classList.remove('hidden');
   el.navBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.nav === name));
-  if (name === 'stats') renderStats();
+  if (name === 'stats')    renderStats();
   if (name === 'settings') renderSettingsUI();
-  if (name === 'topics') renderTopicList();
+  if (name === 'alphabet') renderAlphabet();
+  if (name === 'topics')   renderTopicList();
 }
 
 function showEmptyState(show) {
@@ -291,23 +324,62 @@ function showEmptyState(show) {
   }
 }
 
+// ── 字母頁 ────────────────────────────────────────────────────────
+function renderAlphabet() {
+  el.alphaGrid.innerHTML = '';
+  const list = alphaFilter === 'all' ? ALPHABET : ALPHABET.filter(a => a.toneClass === alphaFilter);
+
+  list.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'alpha-card';
+
+    const toneLabel = { mid: '中音', low: '低音', high: '高音' }[a.toneClass] || '';
+    card.innerHTML = `
+      <button class="alpha-tts">🔊</button>
+      <span class="alpha-tone-badge ${a.toneClass}">${toneLabel}</span>
+      <span class="alpha-char tone-${a.toneClass}">${a.thai}</span>
+      <div class="alpha-sound">${a.sound}</div>
+      <div class="alpha-name">${a.name}</div>
+      <div class="alpha-mascot">${a.mascot}</div>
+      <div class="alpha-tip">${a.tip}</div>
+    `;
+
+    card.querySelector('.alpha-tts').addEventListener('click', e => {
+      e.stopPropagation();
+      TTS.speak(a.thai);
+    });
+    card.addEventListener('click', () => card.classList.toggle('expanded'));
+
+    el.alphaGrid.appendChild(card);
+  });
+}
+
 // ── 主題分頁 ──────────────────────────────────────────────────────
 function renderTopicList() {
   el.topicList.classList.remove('hidden');
   el.topicPractice.classList.add('hidden');
   el.topicGrid.innerHTML = '';
 
+  const allVocab = getAllVocab();
   const srsData = getSRSData();
 
+  // 更新自訂詞彙計數
+  const customCount = getCustomVocab().length;
+  el.customVocabCount.textContent = `自訂詞彙 ${customCount} 個`;
+
+  // 渲染自訂詞彙列表（若表單已展開）
+  renderCustomVocabList();
+
   CATEGORIES.forEach(cat => {
-    const vocabs = VOCABULARY.filter(v => v.category === cat.id);
-    const learnedCount = vocabs.filter(v => {
-      // a vocab is "learned" if any of its card types has been reviewed
-      return settings.cardTypes.some(t => {
+    const vocabs = allVocab.filter(v => v.category === cat.id);
+    if (vocabs.length === 0) return;
+
+    const learnedCount = vocabs.filter(v =>
+      settings.cardTypes.some(t => {
         const id = generateCardId(v.id, t);
         return srsData[id] && srsData[id].lastReview;
-      });
-    }).length;
+      })
+    ).length;
     const pct = vocabs.length > 0 ? Math.round((learnedCount / vocabs.length) * 100) : 0;
 
     const card = document.createElement('div');
@@ -326,7 +398,7 @@ function renderTopicList() {
 }
 
 function startTopicPractice(categoryId, label) {
-  const vocabs = VOCABULARY.filter(v => v.category === categoryId);
+  const vocabs = getAllVocab().filter(v => v.category === categoryId);
   topicQueue = shuffle([...vocabs]);
   topicIdx = 0;
   topicFlipped = false;
@@ -354,11 +426,15 @@ function renderTopicCard() {
 
   topicFlipped = false;
   topicCard = topicQueue[topicIdx];
+
+  // 瞬間重置主題卡片位置，避免前一張背面閃過
+  el.topicCard.style.transition = 'none';
   el.topicCard.classList.remove('flipped');
+  void el.topicCard.offsetWidth; // force reflow
+  el.topicCard.style.transition = '';
+
   el.topicGradeRow.classList.add('hidden');
   el.btnTopicFlip.classList.remove('hidden');
-
-  // Use zh2th card type for topic practice
   el.topicCardType.textContent = '中 → 泰';
   renderTopicFront();
   renderTopicBack();
@@ -395,8 +471,65 @@ function gradeTopicCard(grade) {
   renderTopicCard();
 }
 
+// ── 自訂詞彙 ──────────────────────────────────────────────────────
+function populateCvCategorySelect() {
+  el.cvCategory.innerHTML = CATEGORIES.map(c =>
+    `<option value="${c.id}">${c.emoji} ${c.label}</option>`
+  ).join('');
+}
+
+function renderCustomVocabList() {
+  const list = getCustomVocab();
+  if (!el.cvList) return;
+  if (list.length === 0) {
+    el.cvList.innerHTML = '';
+    return;
+  }
+  el.cvList.innerHTML = list.map(w => `
+    <div class="cv-list-item">
+      <div class="cv-word-info">
+        <div class="cv-word-thai">${w.thai}</div>
+        <div class="cv-word-zh">${w.chinese} · ${w.pos}</div>
+      </div>
+      <button class="cv-delete" data-cv-id="${w.id}" title="刪除">✕</button>
+    </div>
+  `).join('');
+
+  el.cvList.querySelectorAll('[data-cv-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      deleteCustomWord(btn.dataset.cvId);
+      renderTopicList();
+    });
+  });
+}
+
+function saveCvForm() {
+  const thai = el.cvThai.value.trim();
+  const chinese = el.cvChinese.value.trim();
+  if (!thai || !chinese) { alert('泰文和中文意思為必填欄位'); return; }
+
+  addCustomWord({
+    thai,
+    chinese,
+    pos: el.cvPos.value,
+    category: el.cvCategory.value,
+    exampleThai: el.cvExampleThai.value.trim(),
+    exampleChinese: el.cvExampleZh.value.trim(),
+  });
+
+  // 清空表單
+  el.cvThai.value = '';
+  el.cvChinese.value = '';
+  el.cvExampleThai.value = '';
+  el.cvExampleZh.value = '';
+
+  loadStudyScreen(); // 重建今日佇列以加入新詞
+  renderTopicList();
+}
+
 // ── 事件綁定 ──────────────────────────────────────────────────────
 function bindEvents() {
+  // 學習頁
   el.btnFlip.addEventListener('click', flipCard);
   el.card.addEventListener('click', () => { if (!isFlipped) flipCard(); });
   el.btnAudio.addEventListener('click', () => { if (currentCard) TTS.speak(currentCard.thai); });
@@ -408,7 +541,7 @@ function bindEvents() {
     if (!isFlipped) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(dx) < 60) return;
-    gradeCard(dx > 0 ? 3 : 0); // 右滑=輕鬆, 左滑=不記得
+    gradeCard(dx > 0 ? 3 : 0);
   });
 
   document.querySelectorAll('[data-grade]').forEach(btn => {
@@ -432,14 +565,20 @@ function bindEvents() {
   });
   el.btnRequestPerm.addEventListener('click', async () => {
     const result = await NotificationManager.requestPermission();
-    if (result === 'granted') {
-      alert('通知授權成功！儲存設定後將在指定時間提醒您。');
-    } else {
-      alert('通知授權被拒絕，請在瀏覽器設定中手動允許通知。');
-    }
+    alert(result === 'granted' ? '通知授權成功！儲存設定後將在指定時間提醒您。' : '通知授權被拒絕，請在瀏覽器設定中手動允許通知。');
   });
 
-  // 主題練習事件
+  // 字母頁篩選
+  el.alphaFilter.addEventListener('click', e => {
+    const btn = e.target.closest('.alpha-filter-btn');
+    if (!btn) return;
+    el.alphaFilter.querySelectorAll('.alpha-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    alphaFilter = btn.dataset.tone;
+    renderAlphabet();
+  });
+
+  // 主題練習
   el.btnTopicBack.addEventListener('click', () => {
     el.topicList.classList.remove('hidden');
     el.topicPractice.classList.add('hidden');
@@ -453,6 +592,20 @@ function bindEvents() {
     btn.addEventListener('click', () => gradeTopicCard(parseInt(btn.dataset.tgrade, 10)));
   });
 
+  // 自訂詞彙
+  el.btnShowCvForm.addEventListener('click', () => {
+    const isOpen = !el.cvFormPanel.classList.contains('hidden');
+    el.cvFormPanel.classList.toggle('hidden', isOpen);
+    el.btnShowCvForm.textContent = isOpen ? '＋ 新增詞彙' : '✕ 收起';
+    if (!isOpen) renderCustomVocabList();
+  });
+  el.btnCvSave.addEventListener('click', saveCvForm);
+  el.btnCvCancel.addEventListener('click', () => {
+    el.cvFormPanel.classList.add('hidden');
+    el.btnShowCvForm.textContent = '＋ 新增詞彙';
+  });
+
+  // 鍵盤快捷鍵
   document.addEventListener('keydown', (e) => {
     const [name] = Object.entries(el.screen).find(([, s]) => !s.classList.contains('hidden')) || [];
     if (name !== 'study') return;
