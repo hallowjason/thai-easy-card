@@ -26,7 +26,11 @@ const TTS = (() => {
     const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8' +
                 '&q=' + encodeURIComponent(text) +
                 '&tl=th&client=gtx&ttsspeed=0.9';
-    const audio = new Audio(url);
+    // 必須先建空 Audio，再設 referrerPolicy，才能阻止瀏覽器帶 Referer header
+    // Google TTS 在收到 Referer 時會回 404，不帶 Referer 才回 200
+    const audio = new Audio();
+    audio.referrerPolicy = 'no-referrer';
+    audio.src = url;
     if (onEnd) audio.onended = onEnd;
     audio.onerror = () => { if (onEnd) onEnd(); };
     audio.play().catch(() => { if (onEnd) onEnd(); });
