@@ -1,28 +1,31 @@
-// 泰語 TTS 模組（Web Speech API 為主，Google Translate 備援）
+// 泰語 TTS
+// 策略：init() 等 voiceschanged 確認有無泰語語音
+//       有泰語語音 → Web Speech API（iOS/macOS/有語音包的 Android）
+//       無泰語語音 → Google Translate TTS（中國手機 / 無語音包裝置）
 const TTS = (() => {
   let thaiVoice = null;
 
   function init() {
     return new Promise((resolve) => {
-      function pickThaiVoice() {
+      function tryLoad() {
         const voices = speechSynthesis.getVoices();
-        if (voices.length === 0) return false; // 還沒載入
+        if (voices.length === 0) return false; // 尚未載入，等待
         thaiVoice = voices.find(v => v.lang.startsWith('th')) || null;
         resolve(thaiVoice);
         return true;
       }
 
-      if (!pickThaiVoice()) {
-        // Chrome 非同步載入語音清單，等待 voiceschanged
-        speechSynthesis.addEventListener('voiceschanged', pickThaiVoice, { once: true });
-        // 安全保底：3 秒後若仍未觸發則直接啟動（不含泰語語音）
-        setTimeout(() => { if (!thaiVoice) resolve(null); }, 3000);
+      if (!tryLoad()) {
+        // Chrome 非同步載入語音清單，等 voiceschanged
+        speechSynthesis.addEventListener('voiceschanged', tryLoad, { once: true });
+        // 3 秒保底（voiceschanged 永不觸發時），thaiVoice 維持 null → Google TTS
+        setTimeout(() => resolve(null), 3000);
       }
     });
   }
 
   function speakViaGoogleTTS(text, onEnd) {
-    // Google TTS 收到 Referer header 會回 404，需先建 Audio 再設 referrerPolicy
+    // Google TTS 收到 Referer header 會回 404；須先建 Audio 再設 referrerPolicy 才有效
     const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8' +
                 '&q=' + encodeURIComponent(text) +
                 '&tl=th&client=gtx&ttsspeed=0.9';
@@ -36,14 +39,22 @@ const TTS = (() => {
 
   function speak(text, onEnd) {
     if (!text) return;
+
+    // 無泰語語音包（中國手機常見）→ 直接 Google TTS，不走 speechSynthesis
+    // 原因：speechSynthesis 在無泰語語音時不觸發 onerror，而是靜默 onend，無法偵測失敗
+    if (!thaiVoice) {
+      speakViaGoogleTTS(text, onEnd);
+      return;
+    }
+
+    // 有泰語語音 → Web Speech API（onend 可靠，iOS 不需 user gesture）
     speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'th-TH';
     utter.rate = 0.85;
-    if (thaiVoice) utter.voice = thaiVoice;
+    utter.voice = thaiVoice;
     if (onEnd) utter.onend = onEnd;
-    // 當 speechSynthesis 沒有泰語語音包（中國 Android 常見），onerror 觸發後改走 Google TTS
-    utter.onerror = () => speakViaGoogleTTS(text, onEnd);
+    utter.onerror = () => speakViaGoogleTTS(text, onEnd); // 邊緣情況保底
     speechSynthesis.speak(utter);
   }
 
