@@ -1,14 +1,14 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v4';
+const CACHE = 'thai-easy-card-v5';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/vocabulary.js',
-  '/js/srs.js',
-  '/js/tts.js',
-  '/js/notification.js',
-  '/js/app.js',
+  './',
+  './index.html',
+  './css/style.css',
+  './js/vocabulary.js',
+  './js/srs.js',
+  './js/tts.js',
+  './js/notification.js',
+  './js/app.js',
   'https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap',
 ];
 
