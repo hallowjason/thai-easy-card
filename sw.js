@@ -1,5 +1,5 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v3';
+const CACHE = 'thai-easy-card-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,7 +9,7 @@ const ASSETS = [
   '/js/tts.js',
   '/js/notification.js',
   '/js/app.js',
-  'https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap',
 ];
 
 self.addEventListener('install', e => {
@@ -25,8 +25,9 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // 圖片不快取（每次從網路取最新）
-  if (e.request.url.includes('unsplash.com')) return;
+  const url = new URL(e.request.url);
+  // 僅快取同源資源；外部 API（Google TTS、Unsplash 等）直接放行
+  if (url.origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
