@@ -1,5 +1,6 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v5';
+const CACHE = 'thai-easy-card-v6';
+// 僅快取核心 JS/CSS/HTML，字體和音頻由網路提供（避免安裝失敗）
 const ASSETS = [
   './',
   './index.html',
@@ -9,11 +10,15 @@ const ASSETS = [
   './js/tts.js',
   './js/notification.js',
   './js/app.js',
-  'https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600;700&display=swap',
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  // 用 allSettled：單一資源失敗不影響 SW 整體安裝
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(url => c.add(url)))
+    )
+  );
   self.skipWaiting();
 });
 
