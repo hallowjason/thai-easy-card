@@ -1,31 +1,56 @@
 // 泰語 TTS
-// 策略：init() 等 voiceschanged 確認有無泰語語音
-//       有泰語語音 → Web Speech API（iOS/macOS/有語音包的 Android）
-//       無泰語語音 → Google Translate TTS（中國手機 / 無語音包裝置）
+// 策略：
+//   1. 優先用同源 audio/ 目錄的預錄 MP3（id 對應，無 CORS / 跨域問題）
+//   2. 找不到本地檔（自訂詞彙 / 未預錄）→ 偵測泰語語音後決定走 Web Speech API 或 Google TTS
 const TTS = (() => {
   let thaiVoice = null;
+  let initDone = false;
 
   function init() {
     return new Promise((resolve) => {
       function tryLoad() {
         const voices = speechSynthesis.getVoices();
-        if (voices.length === 0) return false; // 尚未載入，等待
+        if (voices.length === 0) return false;
         thaiVoice = voices.find(v => v.lang.startsWith('th')) || null;
+        initDone = true;
         resolve(thaiVoice);
         return true;
       }
-
       if (!tryLoad()) {
-        // Chrome 非同步載入語音清單，等 voiceschanged
         speechSynthesis.addEventListener('voiceschanged', tryLoad, { once: true });
-        // 3 秒保底（voiceschanged 永不觸發時），thaiVoice 維持 null → Google TTS
-        setTimeout(() => resolve(null), 3000);
+        setTimeout(() => { initDone = true; resolve(null); }, 3000);
       }
     });
   }
 
-  function speakViaGoogleTTS(text, onEnd) {
-    // Google TTS 收到 Referer header 會回 404；須先建 Audio 再設 referrerPolicy 才有效
+  // 播放同源預錄 MP3（id: v001…v153），任何裝置皆可用
+  function speakLocal(id, onEnd) {
+    const audio = new Audio('./audio/' + id + '.mp3');
+    if (onEnd) audio.onended = onEnd;
+    audio.onerror = () => speakRemote(null, onEnd); // 找不到 → remote fallback
+    audio.play().catch(() => { if (onEnd) onEnd(); });
+  }
+
+  // 無預錄時的備援（自訂詞彙等）
+  function speakRemote(text, onEnd) {
+    if (!text) { if (onEnd) onEnd(); return; }
+
+    if (thaiVoice) {
+      speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'th-TH';
+      utter.rate = 0.85;
+      utter.voice = thaiVoice;
+      if (onEnd) utter.onend = onEnd;
+      utter.onerror = () => speakGoogleTTS(text, onEnd);
+      speechSynthesis.speak(utter);
+      return;
+    }
+
+    speakGoogleTTS(text, onEnd);
+  }
+
+  function speakGoogleTTS(text, onEnd) {
     const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8' +
                 '&q=' + encodeURIComponent(text) +
                 '&tl=th&client=gtx&ttsspeed=0.9';
@@ -37,25 +62,18 @@ const TTS = (() => {
     audio.play().catch(() => { if (onEnd) onEnd(); });
   }
 
-  function speak(text, onEnd) {
-    if (!text) return;
+  // 主入口：card 帶 id（v001…）→ local MP3；純文字（自訂詞彙）→ remote
+  function speak(textOrId, onEnd, id) {
+    if (!textOrId) return;
 
-    // 無泰語語音包（中國手機常見）→ 直接 Google TTS，不走 speechSynthesis
-    // 原因：speechSynthesis 在無泰語語音時不觸發 onerror，而是靜默 onend，無法偵測失敗
-    if (!thaiVoice) {
-      speakViaGoogleTTS(text, onEnd);
+    // 若有 id 且是 v 開頭 → 用預錄 MP3
+    const cardId = id || (typeof textOrId === 'string' && /^v\d{3}/.test(textOrId) ? textOrId : null);
+    if (cardId) {
+      speakLocal(cardId, onEnd);
       return;
     }
 
-    // 有泰語語音 → Web Speech API（onend 可靠，iOS 不需 user gesture）
-    speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'th-TH';
-    utter.rate = 0.85;
-    utter.voice = thaiVoice;
-    if (onEnd) utter.onend = onEnd;
-    utter.onerror = () => speakViaGoogleTTS(text, onEnd); // 邊緣情況保底
-    speechSynthesis.speak(utter);
+    speakRemote(textOrId, onEnd);
   }
 
   function isAvailable() {
