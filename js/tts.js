@@ -1,10 +1,7 @@
-// 泰語 TTS
-// 策略：
-//   1. 優先用同源 audio/ 目錄的預錄 MP3（id 對應，無 CORS / 跨域問題）
-//   2. 找不到本地檔（自訂詞彙 / 未預錄）→ 偵測泰語語音後決定走 Web Speech API 或 Google TTS
+// 泰語 TTS — 三層策略：本地 MP3 → Web Speech API → Google TTS
 const TTS = (() => {
   let thaiVoice = null;
-  let initDone = false;
+  let currentAudio = null;
 
   function init() {
     return new Promise((resolve) => {
@@ -12,31 +9,38 @@ const TTS = (() => {
         const voices = speechSynthesis.getVoices();
         if (voices.length === 0) return false;
         thaiVoice = voices.find(v => v.lang.startsWith('th')) || null;
-        initDone = true;
         resolve(thaiVoice);
         return true;
       }
       if (!tryLoad()) {
         speechSynthesis.addEventListener('voiceschanged', tryLoad, { once: true });
-        setTimeout(() => { initDone = true; resolve(null); }, 3000);
+        setTimeout(() => resolve(null), 3000);
       }
     });
   }
 
-  // 播放同源預錄 MP3（id: v001…v153），任何裝置皆可用
+  function stopCurrent() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    speechSynthesis.cancel();
+  }
+
   function speakLocal(id, onEnd) {
+    stopCurrent();
     const audio = new Audio('./audio/' + id + '.mp3');
+    currentAudio = audio;
     if (onEnd) audio.onended = onEnd;
-    audio.onerror = () => speakRemote(null, onEnd); // 找不到 → remote fallback
+    audio.onerror = () => speakRemote(null, null, onEnd);
     audio.play().catch(() => { if (onEnd) onEnd(); });
   }
 
-  // 無預錄時的備援（自訂詞彙等）
-  function speakRemote(text, onEnd) {
+  function speakRemote(text, id, onEnd) {
     if (!text) { if (onEnd) onEnd(); return; }
 
     if (thaiVoice) {
-      speechSynthesis.cancel();
+      stopCurrent();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'th-TH';
       utter.rate = 0.85;
@@ -51,10 +55,12 @@ const TTS = (() => {
   }
 
   function speakGoogleTTS(text, onEnd) {
+    stopCurrent();
     const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8' +
                 '&q=' + encodeURIComponent(text) +
                 '&tl=th&client=gtx&ttsspeed=0.9';
     const audio = new Audio();
+    currentAudio = audio;
     audio.referrerPolicy = 'no-referrer';
     audio.src = url;
     if (onEnd) audio.onended = onEnd;
@@ -62,18 +68,14 @@ const TTS = (() => {
     audio.play().catch(() => { if (onEnd) onEnd(); });
   }
 
-  // 主入口：card 帶 id（v001…）→ local MP3；純文字（自訂詞彙）→ remote
-  function speak(textOrId, onEnd, id) {
-    if (!textOrId) return;
-
-    // 若有 id 且是 v 開頭 → 用預錄 MP3
-    const cardId = id || (typeof textOrId === 'string' && /^v\d{3}/.test(textOrId) ? textOrId : null);
-    if (cardId) {
-      speakLocal(cardId, onEnd);
+  // id (v001…v153) → 本地 MP3；純文字（自訂詞彙）→ speakRemote
+  function speak(text, id, onEnd) {
+    if (!text) return;
+    if (id) {
+      speakLocal(id, onEnd);
       return;
     }
-
-    speakRemote(textOrId, onEnd);
+    speakRemote(text, null, onEnd);
   }
 
   function isAvailable() {

@@ -171,12 +171,12 @@ function renderFront(card) {
     el.cardFront.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
   } else if (t === TH2ZH) {
     el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div>`;
-    setTimeout(() => TTS.speak(card.thai, null, card.id), 300);
+    setTimeout(() => TTS.speak(card.thai, card.id), 300);
   } else if (t === BLIND_READ) {
     el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div><div class="card-hint">看著泰文，試著在心中發音</div>`;
   } else if (t === BLIND_LISTEN) {
     el.cardFront.innerHTML = `<div class="card-blind-listen"><div class="listen-icon">🔊</div><div class="card-hint">仔細聆聽，辨識是哪個泰文字</div></div>`;
-    setTimeout(() => TTS.speak(card.thai, null, card.id), 500);
+    setTimeout(() => TTS.speak(card.thai, card.id), 500);
   }
 }
 
@@ -204,7 +204,7 @@ function flipCard() {
 
   const { ZH2TH, BLIND_READ } = CARD_TYPES;
   if (currentCard.cardType === ZH2TH || currentCard.cardType === BLIND_READ) {
-    TTS.speak(currentCard.thai, null, currentCard.id);
+    TTS.speak(currentCard.thai, currentCard.id);
   }
 }
 
@@ -458,7 +458,7 @@ function flipTopicCard() {
   el.topicCard.classList.add('flipped');
   el.topicGradeRow.classList.remove('hidden');
   el.btnTopicFlip.classList.add('hidden');
-  TTS.speak(topicCard.thai, null, topicCard.id);
+  TTS.speak(topicCard.thai, topicCard.id);
 }
 
 function gradeTopicCard(grade) {
@@ -532,7 +532,7 @@ function bindEvents() {
   // 學習頁
   el.btnFlip.addEventListener('click', flipCard);
   el.card.addEventListener('click', () => { if (!isFlipped) flipCard(); });
-  el.btnAudio.addEventListener('click', () => { if (currentCard) TTS.speak(currentCard.thai, null, currentCard.id); });
+  el.btnAudio.addEventListener('click', () => { if (currentCard) TTS.speak(currentCard.thai, currentCard.id); });
 
   // 左右滑動手勢
   let touchStartX = 0;
@@ -586,7 +586,7 @@ function bindEvents() {
   });
   el.btnTopicFlip.addEventListener('click', flipTopicCard);
   el.topicCard.addEventListener('click', () => { if (!topicFlipped) flipTopicCard(); });
-  el.btnTopicAudio.addEventListener('click', () => { if (topicCard) TTS.speak(topicCard.thai, null, topicCard.id); });
+  el.btnTopicAudio.addEventListener('click', () => { if (topicCard) TTS.speak(topicCard.thai, topicCard.id); });
 
   document.querySelectorAll('[data-tgrade]').forEach(btn => {
     btn.addEventListener('click', () => gradeTopicCard(parseInt(btn.dataset.tgrade, 10)));
@@ -619,7 +619,7 @@ function bindEvents() {
       if (e.key in gradeMap) gradeCard(gradeMap[e.key]);
     }
     if (e.key === 'r' || e.key === 'R') {
-      if (currentCard) TTS.speak(currentCard.thai);
+      if (currentCard) TTS.speak(currentCard.thai, currentCard.id);
     }
   });
 }
