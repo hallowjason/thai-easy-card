@@ -527,6 +527,7 @@ kbd {
   margin-bottom: 20px;
 }
 #topic-card.flipped { transform: rotateY(180deg); }
+#topic-card-back { transform: rotateY(180deg); }
 
 /* #topic-grade-row shares .grade-row class — no extra rules needed */
 
