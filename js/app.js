@@ -346,7 +346,7 @@ function renderAlphabet() {
 
     card.querySelector('.alpha-tts').addEventListener('click', e => {
       e.stopPropagation();
-      TTS.speak(a.thai);
+      TTS.speak(a.thai, a.id);
     });
     card.addEventListener('click', () => card.classList.toggle('expanded'));
 
