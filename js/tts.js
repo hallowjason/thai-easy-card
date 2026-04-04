@@ -27,12 +27,12 @@ const TTS = (() => {
     speechSynthesis.cancel();
   }
 
-  function speakLocal(id, onEnd) {
+  function speakLocal(text, id, onEnd) {
     stopCurrent();
     const audio = new Audio('./audio/' + id + '.mp3');
     currentAudio = audio;
     if (onEnd) audio.onended = onEnd;
-    audio.onerror = () => speakRemote(null, null, onEnd);
+    audio.onerror = () => speakRemote(text, null, onEnd);
     audio.play().catch(() => { if (onEnd) onEnd(); });
   }
 
@@ -72,7 +72,7 @@ const TTS = (() => {
   function speak(text, id, onEnd) {
     if (!text) return;
     if (id) {
-      speakLocal(id, onEnd);
+      speakLocal(text, id, onEnd);
       return;
     }
     speakRemote(text, null, onEnd);
