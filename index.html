@@ -366,7 +366,10 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      // updateViaCache:'none' 強制每次從網路抓最新 sw.js，不走 HTTP cache
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        .then(reg => reg.update())   // 立即檢查是否有新版 SW
+        .catch(() => {});
     });
   }
 </script>
