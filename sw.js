@@ -1,15 +1,17 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v7';
+const CACHE = 'thai-easy-card-v8';
 // 僅快取核心 JS/CSS/HTML，字體和音頻由網路提供（避免安裝失敗）
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/vocabulary.js',
+  './js/phrases.js',
   './js/srs.js',
   './js/tts.js',
   './js/notification.js',
   './js/app.js',
+  './js/phrases-app.js',
 ];
 
 self.addEventListener('install', e => {
