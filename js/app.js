@@ -36,6 +36,7 @@ const el = {
     stats:    document.getElementById('screen-stats'),
     alphabet: document.getElementById('screen-alphabet'),
     topics:   document.getElementById('screen-topics'),
+    phrases:  document.getElementById('screen-phrases'),
     settings: document.getElementById('screen-settings'),
   },
   card:        document.getElementById('card'),
@@ -119,6 +120,7 @@ async function init() {
   populateCvCategorySelect();
   loadStudyScreen();
   bindEvents();
+  initPhrases();
   showScreen('study');
   NotificationManager.init(settings);
 }
@@ -309,6 +311,7 @@ function showScreen(name) {
   if (name === 'settings') renderSettingsUI();
   if (name === 'alphabet') renderAlphabet();
   if (name === 'topics')   renderTopicList();
+  if (name === 'phrases')  renderPhraseTopics();
 }
 
 function showEmptyState(show) {
