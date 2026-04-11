@@ -25,6 +25,7 @@
   <button data-nav="stats">📊 統計</button>
   <button data-nav="alphabet">🔤 字母</button>
   <button data-nav="topics">🗂 主題</button>
+  <button data-nav="phrases">💬 短句</button>
   <button data-nav="settings">⚙️ 設定</button>
 </nav>
 
@@ -257,6 +258,59 @@
     </div>
   </section>
 
+  <!-- ── 短句頁 ── -->
+  <section id="screen-phrases" class="hidden">
+    <!-- 主題列表 -->
+    <div id="phrases-topic-list">
+      <p class="phrases-intro">選擇情境，練習生活對話。每句都可點 🔊 聽發音。</p>
+      <div class="topic-grid" id="phrases-topic-grid"></div>
+    </div>
+
+    <!-- 對話練習 -->
+    <div id="phrases-dialogue" class="hidden">
+      <div class="topic-back-row">
+        <button class="btn-back" id="btn-phrases-back">← 返回</button>
+        <span class="topic-practice-title" id="phrases-topic-title"></span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar-bg"><div id="phrases-progress-bar"></div></div>
+        <span id="phrases-progress">1 / 8</span>
+      </div>
+
+      <div class="phrase-card">
+        <div class="phrase-situation" id="phrases-situation"></div>
+
+        <!-- 問句 -->
+        <div class="phrase-row phrase-q-row">
+          <div class="phrase-role">問</div>
+          <div class="phrase-content">
+            <div class="phrase-thai" id="phrases-q-thai"></div>
+            <div class="phrase-chinese" id="phrases-q-zh"></div>
+          </div>
+          <button class="btn-phrase-audio" id="btn-phrases-q-audio" title="播放問句">🔊</button>
+        </div>
+
+        <!-- 答句（預設隱藏） -->
+        <div id="phrases-answer-block" class="hidden">
+          <div class="phrase-divider">▼</div>
+          <div class="phrase-row phrase-a-row">
+            <div class="phrase-role phrase-role-a">答</div>
+            <div class="phrase-content">
+              <div class="phrase-thai" id="phrases-a-thai"></div>
+              <div class="phrase-chinese" id="phrases-a-zh"></div>
+            </div>
+            <button class="btn-phrase-audio" id="btn-phrases-a-audio" title="播放答句">🔊</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="phrase-actions">
+        <button class="btn btn-primary phrase-btn-reveal" id="btn-phrases-reveal">顯示回應 ▼</button>
+        <button class="btn btn-primary hidden" id="btn-phrases-next">下一句 →</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 設定頁 ── -->
   <section id="screen-settings" class="hidden">
     <div class="settings-section">
@@ -303,10 +357,12 @@
 </main>
 
 <script src="js/vocabulary.js"></script>
+<script src="js/phrases.js"></script>
 <script src="js/srs.js"></script>
 <script src="js/tts.js"></script>
 <script src="js/notification.js"></script>
 <script src="js/app.js"></script>
+<script src="js/phrases-app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -203,7 +203,7 @@ function getTodayQueue(vocabList, settings) {
   const newCountToday = getStoredInt(todayNewKey);
   const newToAdd = newCards.slice(0, Math.max(0, settings.dailyNewCards - newCountToday));
 
-  return [...shuffle(due), ...shuffle(newToAdd)];
+  return [...spreadByVocab(due), ...spreadByVocab(newToAdd)];
 }
 
 function recordGrade(cardId, grade) {
@@ -295,4 +295,22 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// 交錯排列：讓同一詞彙的不同卡片不會連續出現
+function spreadByVocab(arr) {
+  const groups = new Map();
+  for (const card of arr) {
+    if (!groups.has(card.id)) groups.set(card.id, []);
+    groups.get(card.id).push(card);
+  }
+  // 對每個詞彙組內部再 shuffle，然後 round-robin 交錯
+  const buckets = shuffle([...groups.values()].map(g => shuffle(g)));
+  const result = [];
+  while (buckets.some(b => b.length > 0)) {
+    for (const bucket of buckets) {
+      if (bucket.length > 0) result.push(bucket.shift());
+    }
+  }
+  return result;
 }

@@ -710,6 +710,93 @@ kbd {
 }
 .cv-delete:active { opacity: 1; }
 
+/* ── 短句頁 ─────────────────────────────── */
+.phrases-intro {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.phrase-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+}
+.phrase-situation {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(200, 112, 58, 0.12);
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.phrase-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.phrase-q-row { margin-bottom: 4px; }
+.phrase-role {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+.phrase-role-a {
+  background: #4CAF50;
+}
+.phrase-content { flex: 1; }
+.phrase-thai {
+  font-family: 'Noto Serif Thai', serif;
+  font-size: 22px;
+  line-height: 1.4;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.phrase-chinese {
+  font-size: 14px;
+  color: var(--text-sub);
+}
+.btn-phrase-audio {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.btn-phrase-audio:active { background: var(--bg2); }
+.phrase-divider {
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 14px;
+  margin: 12px 0 10px;
+}
+.phrase-actions {
+  display: flex;
+  gap: 10px;
+}
+.phrase-btn-reveal {
+  flex: 1;
+}
+#btn-phrases-next {
+  flex: 1;
+}
+
 /* ── RWD ────────────────────────────────── */
 @media (max-width: 400px) {
   .card-thai { font-size: 36px; }
