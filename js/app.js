@@ -27,7 +27,8 @@ let topicFlipped = false;
 let topicCard = null;
 
 // ── 字母頁狀態 ────────────────────────────────────────────────────
-let alphaFilter = 'all';
+let alphaFilter = 'all';        // 'all' | 'mid' | 'low' | 'high'（僅子音類有效）
+let alphaCategory = 'consonant'; // 'consonant' | 'vowel' | 'final'
 
 // ── DOM ───────────────────────────────────────────────────────────
 const el = {
@@ -74,8 +75,10 @@ const el = {
   settingNotifMinute:  document.getElementById('setting-notif-minute'),
   btnRequestPerm:      document.getElementById('btn-request-permission'),
   // 字母頁
-  alphaGrid:   document.getElementById('alpha-grid'),
-  alphaFilter: document.getElementById('alpha-filter'),
+  alphaGrid:      document.getElementById('alpha-grid'),
+  alphaFilter:    document.getElementById('alpha-filter'),
+  alphaCatFilter: document.getElementById('alpha-cat-filter'),
+  alphaIntro:     document.getElementById('alpha-intro'),
   // 主題
   topicGrid:       document.getElementById('topic-grid'),
   topicList:       document.getElementById('topic-list'),
@@ -328,22 +331,66 @@ function showEmptyState(show) {
 }
 
 // ── 字母頁 ────────────────────────────────────────────────────────
+const ALPHA_INTRO_TEXT = {
+  consonant: '點擊卡片可展開記憶口訣，🔊 按鈕播放發音。聲母/末音格式：初始聲母／作為尾音時的發音。',
+  vowel:     '泰文母音以 อ 為佔位子音示範，實際使用時接在任何子音後。短／長音是泰文發音的關鍵。',
+  final:     '韻母（มาตราตัวสะกด）= 尾音收口的 9 種規則。同類尾音字母發音相同，只有寫法不同。',
+};
+
 function renderAlphabet() {
   el.alphaGrid.innerHTML = '';
-  const list = alphaFilter === 'all' ? ALPHABET : ALPHABET.filter(a => a.toneClass === alphaFilter);
+
+  // 介紹文字依類別切換
+  if (el.alphaIntro) {
+    el.alphaIntro.textContent = ALPHA_INTRO_TEXT[alphaCategory] || ALPHA_INTRO_TEXT.consonant;
+  }
+
+  // 子音類才顯示聲調篩選列
+  if (alphaCategory === 'consonant') {
+    el.alphaFilter.classList.remove('hidden');
+  } else {
+    el.alphaFilter.classList.add('hidden');
+  }
+
+  // 依類別取資料源
+  let source;
+  if (alphaCategory === 'vowel')      source = VOWELS;
+  else if (alphaCategory === 'final') source = FINALS;
+  else                                source = ALPHABET;
+
+  // 子音類才套用聲調次篩選
+  const list = (alphaCategory === 'consonant' && alphaFilter !== 'all')
+    ? source.filter(a => a.toneClass === alphaFilter)
+    : source;
 
   list.forEach(a => {
     const card = document.createElement('div');
     card.className = 'alpha-card';
 
-    const toneLabel = { mid: '中音', low: '低音', high: '高音' }[a.toneClass] || '';
+    let badgeLabel = '';
+    if (alphaCategory === 'consonant') {
+      badgeLabel = { mid: '中音', low: '低音', high: '高音' }[a.toneClass] || '';
+    } else if (alphaCategory === 'vowel') {
+      badgeLabel = a.length === 'long' ? '長音' : '短音';
+    } else if (alphaCategory === 'final') {
+      badgeLabel = '韻母';
+    }
+
+    // 卡片底行：子音用 mascot，韻母改顯示 endingChars，母音不顯示
+    let bottomRow = '';
+    if (alphaCategory === 'consonant') {
+      bottomRow = `<div class="alpha-mascot">${a.mascot}</div>`;
+    } else if (alphaCategory === 'final') {
+      bottomRow = `<div class="alpha-endings">可作尾音：${a.endingChars}</div>`;
+    }
+
     card.innerHTML = `
       <button class="alpha-tts">🔊</button>
-      <span class="alpha-tone-badge ${a.toneClass}">${toneLabel}</span>
+      <span class="alpha-tone-badge ${a.toneClass}">${badgeLabel}</span>
       <span class="alpha-char tone-${a.toneClass}">${a.thai}</span>
       <div class="alpha-sound">${a.sound}</div>
       <div class="alpha-name">${a.name}</div>
-      <div class="alpha-mascot">${a.mascot}</div>
+      ${bottomRow}
       <div class="alpha-tip">${a.tip}</div>
     `;
 
@@ -578,6 +625,19 @@ function bindEvents() {
     el.alphaFilter.querySelectorAll('.alpha-filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     alphaFilter = btn.dataset.tone;
+    renderAlphabet();
+  });
+
+  // 字母頁類別切換（子音／母音／韻母）
+  el.alphaCatFilter.addEventListener('click', e => {
+    const btn = e.target.closest('.alpha-cat-btn');
+    if (!btn) return;
+    el.alphaCatFilter.querySelectorAll('.alpha-cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    alphaCategory = btn.dataset.cat;
+    // 切類別時聲調篩選回 'all'
+    alphaFilter = 'all';
+    el.alphaFilter.querySelectorAll('.alpha-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.tone === 'all'));
     renderAlphabet();
   });
 

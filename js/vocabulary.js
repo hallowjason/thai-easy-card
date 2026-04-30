@@ -279,3 +279,55 @@ const ALPHABET = [
   { id: 'a035', thai: 'ษ', name: '老人', sound: 'ส/ด', tip: '字形像老人彎腰，記：ษ ผู้เฒ่า（翁）', toneClass: 'high', mascot: '👴 老人', imageQuery: 'elderly old man' },
   { id: 'a036', thai: 'ฮ', name: '梟（低）', sound: 'ห/–', tip: '字形像貓頭鷹，記：ฮ นกฮูก（梟）', toneClass: 'high', mascot: '🦉 貓頭鷹', imageQuery: 'owl night' },
 ];
+
+// 泰語母音表（สระ）— 短長配對 + 雙母音 + 特殊母音
+// 顯示時用 อ 作為佔位子音，實際使用時會接在任何子音後
+const VOWELS = [
+  // ── 9 對短／長母音（อ 為佔位子音） ───────────────────────────
+  { id: 'sv01', thai: 'อะ',   name: '短啊',  sound: 'อ + ะ',         tip: '嘴巴大開，氣聲短促一拍即停。例：จะ（將要）、กะ（推估）',         toneClass: 'vowel', length: 'short' },
+  { id: 'sv02', thai: 'อา',   name: '長啊',  sound: 'อ + า',         tip: '嘴張到最大，拉長兩拍像「啊——」。例：มา（來）、บ้าน（家）',         toneClass: 'vowel', length: 'long'  },
+  { id: 'sv03', thai: 'อิ',   name: '短衣',  sound: 'อ + ิ',          tip: '嘴角向兩邊拉扁，短一拍。例：กิน（吃）、ติด（黏）',                  toneClass: 'vowel', length: 'short' },
+  { id: 'sv04', thai: 'อี',   name: '長衣',  sound: 'อ + ี',          tip: '微笑唇形拉長兩拍。例：ดี（好）、มี（有）',                          toneClass: 'vowel', length: 'long'  },
+  { id: 'sv05', thai: 'อึ',   name: '短唔',  sound: 'อ + ึ',          tip: '嘴扁不噘、舌根後縮，發類似「唔」的喉音短一拍。例：หนึ่ง（一）',     toneClass: 'vowel', length: 'short' },
+  { id: 'sv06', thai: 'อือ',  name: '長唔',  sound: 'อ + ื + อ',      tip: '同短唔但拉長。例：มือ（手）、ชื่อ（名字）',                          toneClass: 'vowel', length: 'long'  },
+  { id: 'sv07', thai: 'อุ',   name: '短烏',  sound: 'อ + ุ',          tip: '雙唇收圓向前突出，短促一拍。例：กุ้ง（蝦）、ผุด（冒出）',           toneClass: 'vowel', length: 'short' },
+  { id: 'sv08', thai: 'อู',   name: '長烏',  sound: 'อ + ู',          tip: '唇圓收緊拉長像「嗚——」。例：หู（耳朵）、ดู（看）',                 toneClass: 'vowel', length: 'long'  },
+  { id: 'sv09', thai: 'เอะ',  name: '短欸',  sound: 'เ + อ + ะ',     tip: '嘴半開短一拍像中文「欸」。例：เละ（爛）、เป็ด（鴨）',                toneClass: 'vowel', length: 'short' },
+  { id: 'sv10', thai: 'เอ',   name: '長欸',  sound: 'เ + อ',         tip: '嘴半開拉長兩拍。例：เธอ（妳）、เก（歪）',                            toneClass: 'vowel', length: 'long'  },
+  { id: 'sv11', thai: 'แอะ',  name: '短矮',  sound: 'แ + อ + ะ',     tip: '嘴張更寬更平，台語「矮」短促版。例：แกะ（剝）',                       toneClass: 'vowel', length: 'short' },
+  { id: 'sv12', thai: 'แอ',   name: '長矮',  sound: 'แ + อ',         tip: '嘴大張平展，拉長像「矮——」。例：แม่（媽媽）、แก่（老）',             toneClass: 'vowel', length: 'long'  },
+  { id: 'sv13', thai: 'โอะ',  name: '短喔',  sound: 'โ + อ + ะ',     tip: '嘴圓開、舌後縮，短促像「喔」。例：โต๊ะ（桌子）',                       toneClass: 'vowel', length: 'short' },
+  { id: 'sv14', thai: 'โอ',   name: '長喔',  sound: 'โ + อ',         tip: '嘴圓開拉長像「喔——」。例：โต（大）、โรง（廠）',                       toneClass: 'vowel', length: 'long'  },
+  { id: 'sv15', thai: 'เอาะ', name: '短哦',  sound: 'เ + อ + า + ะ', tip: '喉部低位、嘴半圓，短促像台語「學」的母音。例：เลาะ（拆）',           toneClass: 'vowel', length: 'short' },
+  { id: 'sv16', thai: 'ออ',   name: '長哦',  sound: 'อ + อ',         tip: '喉部低位拉長像「哦——」。例：รอ（等）、พ่อ（爸爸）',                  toneClass: 'vowel', length: 'long'  },
+  { id: 'sv17', thai: 'เออะ', name: '短呃',  sound: 'เ + อ + อ + ะ', tip: '舌位居中，發中央含糊音「呃」短促一拍。例：เลอะ（髒）',               toneClass: 'vowel', length: 'short' },
+  { id: 'sv18', thai: 'เออ',  name: '長呃',  sound: 'เ + อ + อ',     tip: '拉長為「呃——」，類似英語 her 去掉 r。例：เธอ（妳）、เจอ（遇到）',     toneClass: 'vowel', length: 'long'  },
+
+  // ── 雙母音（短／長） ──────────────────────────────────────
+  { id: 'sv19', thai: 'เอียะ', name: '短雙母音「衣啊」', sound: 'เ + อ + ี + ย + ะ', tip: '從衣滑到啊，短促一拍。較少見',                            toneClass: 'vowel', length: 'short' },
+  { id: 'sv20', thai: 'เอีย',  name: '長雙母音「衣啊」', sound: 'เ + อ + ี + ย',      tip: '拉長雙母音「衣啊——」。例：เสีย（壞）、เรียน（學）',     toneClass: 'vowel', length: 'long'  },
+  { id: 'sv21', thai: 'เอือะ', name: '短雙母音「唔啊」', sound: 'เ + อ + ื + อ + ะ', tip: '從唔滑到啊，極少見',                                       toneClass: 'vowel', length: 'short' },
+  { id: 'sv22', thai: 'เอือ',  name: '長雙母音「唔啊」', sound: 'เ + อ + ื + อ',      tip: '拉長「唔啊——」。例：เดือน（月份）、เสือ（老虎）',       toneClass: 'vowel', length: 'long'  },
+  { id: 'sv23', thai: 'อัวะ',  name: '短雙母音「烏啊」', sound: 'อ + ั + ว + ะ',      tip: '從烏滑到啊，短促',                                          toneClass: 'vowel', length: 'short' },
+  { id: 'sv24', thai: 'อัว',   name: '長雙母音「烏啊」', sound: 'อ + ั + ว',          tip: '拉長「烏啊——」。例：กลัว（怕）、มหา（大學）的 หัว（頭）', toneClass: 'vowel', length: 'long'  },
+
+  // ── 特殊母音 ─────────────────────────────────────────────
+  { id: 'sv25', thai: 'ไอ',  name: '矮音（常用 ไม้มลาย）', sound: 'ไ + อ',     tip: '使用率最高的「矮」音寫法。例：ไป（去）、ไก่（雞）',         toneClass: 'vowel', length: 'short' },
+  { id: 'sv26', thai: 'ใอ',  name: '矮音（古字 ไม้ม้วน）', sound: 'ใ + อ',     tip: '僅 20 個固定詞彙使用，需單獨記憶。例：ใจ（心）、ใหม่（新）', toneClass: 'vowel', length: 'short' },
+  { id: 'sv27', thai: 'เอา', name: '凹音',                 sound: 'เ + อ + า', tip: '嘴從欸滑到啊。例：เอา（要）、เก้า（九）、เขา（他）',         toneClass: 'vowel', length: 'short' },
+  { id: 'sv28', thai: 'อำ',  name: '庵音（啊＋m尾）',       sound: 'อ + ำ',     tip: '母音 啊 自帶 m 尾音收唇。例：น้ำ（水）、ดำ（黑）、ทำ（做）', toneClass: 'vowel', length: 'short' },
+];
+
+// 泰語韻母（มาตราตัวสะกด）— 9 類尾音規則
+// 「แม่」=母系／類別，「ก กา」=無尾音，其餘 8 類各對應一種尾音收口方式
+const FINALS = [
+  { id: 'mf01', thai: '—',    name: 'แม่ ก กา',  sound: '無尾音',     tip: '開音節，母音發完後沒有任何尾音收口。例：มา（來）、ดี（好）、โต（大）',                                                            toneClass: 'final', endingChars: '—' },
+  { id: 'mf02', thai: '–ก',   name: 'แม่ กก',   sound: 'ก 類尾音',   tip: '舌根抵軟顎、瞬間閉氣（爆破清音）。可作尾音：ก ข ค ฆ。例：นก（鳥）、ลูก（孩子）、ปาก（嘴）',                                       toneClass: 'final', endingChars: 'ก ข ค ฆ' },
+  { id: 'mf03', thai: '–ด',   name: 'แม่ กด',   sound: 'ด 類尾音',   tip: '舌尖頂上齒齦、瞬間閉氣。可作尾音：ด ต จ ช ซ ส ศ ษ ฎ ฏ ฐ ฑ ฒ ถ ท ธ。例：จิต（心）、รถ（車）、บาท（泰銖）',                          toneClass: 'final', endingChars: 'ด ต จ ช ซ ส ศ ษ ฎ ฏ ฐ ฑ ฒ ถ ท ธ' },
+  { id: 'mf04', thai: '–บ',   name: 'แม่ กบ',   sound: 'บ 類尾音',   tip: '雙唇緊閉、瞬間閉氣。可作尾音：บ ป พ ฟ ภ。例：รับ（接）、ภาพ（圖）、ลูบ（撫摸）',                                                  toneClass: 'final', endingChars: 'บ ป พ ฟ ภ' },
+  { id: 'mf05', thai: '–ง',   name: 'แม่ กง',   sound: 'ง 鼻音尾',   tip: '舌根抵軟顎但氣從鼻出，類似中文「ㄤ／ㄥ」。可作尾音：ง。例：จง（命令）、ทาง（路）、ห้อง（房）',                                  toneClass: 'final', endingChars: 'ง' },
+  { id: 'mf06', thai: '–น',   name: 'แม่ กน',   sound: 'น 鼻音尾',   tip: '舌尖頂齒齦、氣從鼻出，類似中文「ㄣ／ㄢ」。可作尾音：น ณ ญ ร ล ฬ。例：กิน（吃）、คน（人）、ฝน（雨）',                            toneClass: 'final', endingChars: 'น ณ ญ ร ล ฬ' },
+  { id: 'mf07', thai: '–ม',   name: 'แม่ กม',   sound: 'ม 鼻音尾',   tip: '雙唇閉合、氣從鼻出，類似中文「ㄇ」收尾。可作尾音：ม。例：นาม（名）、ลม（風）、ส้ม（橘子）',                                     toneClass: 'final', endingChars: 'ม' },
+  { id: 'mf08', thai: '–ย',   name: 'แม่ เกย',  sound: 'ย 半母音尾', tip: '半母音 y 收尾，類似中文「-ㄧ」。可作尾音：ย。例：สวย（漂亮）、ดอย（山）、เลย（過頭）',                                          toneClass: 'final', endingChars: 'ย' },
+  { id: 'mf09', thai: '–ว',   name: 'แม่ เกอว', sound: 'ว 半母音尾', tip: '半母音 w 收尾，類似中文「-ㄨ」。可作尾音：ว。例：ดาว（星）、แล้ว（已經）、ชาว（眾／民）',                                      toneClass: 'final', endingChars: 'ว' },
+];

@@ -157,13 +157,20 @@
 
   <!-- ── 字母頁 ── -->
   <section id="screen-alphabet" class="hidden">
+    <!-- 主類別：子音／母音／韻母 -->
+    <div class="alpha-cat-filter" id="alpha-cat-filter">
+      <button class="alpha-cat-btn active" data-cat="consonant">子音 (42)</button>
+      <button class="alpha-cat-btn" data-cat="vowel">母音 (28)</button>
+      <button class="alpha-cat-btn" data-cat="final">韻母 (9)</button>
+    </div>
+    <!-- 子音的聲調次篩選（僅子音類顯示） -->
     <div class="alpha-filter" id="alpha-filter">
       <button class="alpha-filter-btn active" data-tone="all">全部</button>
       <button class="alpha-filter-btn" data-tone="mid">🟢 中音</button>
       <button class="alpha-filter-btn" data-tone="low">🔵 低音</button>
       <button class="alpha-filter-btn" data-tone="high">🔴 高音</button>
     </div>
-    <p class="alpha-intro">點擊卡片可展開記憶口訣，🔊 按鈕播放發音。聲母/末音格式：初始聲母／作為尾音時的發音。</p>
+    <p class="alpha-intro" id="alpha-intro">點擊卡片可展開記憶口訣，🔊 按鈕播放發音。聲母/末音格式：初始聲母／作為尾音時的發音。</p>
     <div class="alpha-grid" id="alpha-grid"></div>
   </section>
 
@@ -286,8 +293,12 @@
           <div class="phrase-content">
             <div class="phrase-thai" id="phrases-q-thai"></div>
             <div class="phrase-chinese" id="phrases-q-zh"></div>
+            <div class="phrase-mic-result hidden" id="phrases-q-mic-result"></div>
           </div>
-          <button class="btn-phrase-audio" id="btn-phrases-q-audio" title="播放問句">🔊</button>
+          <div class="phrase-btn-stack">
+            <button class="btn-phrase-audio" id="btn-phrases-q-audio" title="播放問句">🔊</button>
+            <button class="btn-phrase-mic" id="btn-phrases-q-mic" title="跟我唸">🎤</button>
+          </div>
         </div>
 
         <!-- 答句（預設隱藏） -->
@@ -298,8 +309,12 @@
             <div class="phrase-content">
               <div class="phrase-thai" id="phrases-a-thai"></div>
               <div class="phrase-chinese" id="phrases-a-zh"></div>
+              <div class="phrase-mic-result hidden" id="phrases-a-mic-result"></div>
             </div>
-            <button class="btn-phrase-audio" id="btn-phrases-a-audio" title="播放答句">🔊</button>
+            <div class="phrase-btn-stack">
+              <button class="btn-phrase-audio" id="btn-phrases-a-audio" title="播放答句">🔊</button>
+              <button class="btn-phrase-mic" id="btn-phrases-a-mic" title="跟我唸">🎤</button>
+            </div>
           </div>
         </div>
       </div>
