@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# 規劃文件 / Session 暫存（本機保留，不入 repo）
+PLAN_account_leaderboard.md
+context.md
+CONTEXT.md
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
