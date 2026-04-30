@@ -5,6 +5,10 @@ let phraseTopicId = null;
 let phraseIdx = 0;
 let phraseAnswerShown = false;
 
+// 語音辨識狀態
+let phraseRecognition = null;
+let phraseRecognitionRole = null;  // 'q' | 'a' | null
+
 const elP = {
   topicList:    document.getElementById('phrases-topic-list'),
   dialogue:     document.getElementById('phrases-dialogue'),
@@ -16,10 +20,14 @@ const elP = {
   qThai:        document.getElementById('phrases-q-thai'),
   qChinese:     document.getElementById('phrases-q-zh'),
   btnQAudio:    document.getElementById('btn-phrases-q-audio'),
+  btnQMic:      document.getElementById('btn-phrases-q-mic'),
+  qMicResult:   document.getElementById('phrases-q-mic-result'),
   answerBlock:  document.getElementById('phrases-answer-block'),
   aThai:        document.getElementById('phrases-a-thai'),
   aChinese:     document.getElementById('phrases-a-zh'),
   btnAAudio:    document.getElementById('btn-phrases-a-audio'),
+  btnAMic:      document.getElementById('btn-phrases-a-mic'),
+  aMicResult:   document.getElementById('phrases-a-mic-result'),
   btnReveal:    document.getElementById('btn-phrases-reveal'),
   btnNext:      document.getElementById('btn-phrases-next'),
   topicGrid:    document.getElementById('phrases-topic-grid'),
@@ -59,6 +67,48 @@ function startPhraseTopic(topicId) {
   renderPhraseCard();
 }
 
+// 將 thai 拆字成 HTML（每個詞包成 .phrase-word），無 segments 時 fallback 純文字
+function renderSegmentsHtml(textObj) {
+  const segments = textObj.segments;
+  if (!segments || !segments.length) {
+    return escapeHtml(textObj.thai);
+  }
+  return segments.map(seg => {
+    if (seg === ' ' || /^\s+$/.test(seg)) {
+      return '<span class="phrase-word-space"></span>';
+    }
+    return `<span class="phrase-word" data-word="${escapeAttr(seg)}">${escapeHtml(seg)}</span>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s);
+}
+
+// 點 .phrase-word：朗讀單詞
+function bindWordClicks(container) {
+  container.querySelectorAll('.phrase-word').forEach(span => {
+    span.addEventListener('click', e => {
+      e.stopPropagation();
+      const word = span.dataset.word;
+      if (!word) return;
+      // 視覺回饋
+      span.classList.add('is-speaking');
+      setTimeout(() => span.classList.remove('is-speaking'), 800);
+      try {
+        TTS.speak(word, null);
+      } catch (err) {
+        console.warn('[phrases] word TTS failed', err);
+      }
+    });
+  });
+}
+
 function renderPhraseCard() {
   const topic = PHRASE_TOPICS.find(t => t.id === phraseTopicId);
   if (!topic) return;
@@ -72,11 +122,21 @@ function renderPhraseCard() {
   phraseAnswerShown = false;
   const d = topic.dialogues[phraseIdx];
 
+  // 取消任何進行中的語音辨識
+  cancelPhraseRecognition(true);
+
   elP.situation.textContent = d.situation;
-  elP.qThai.textContent = d.q.thai;
+  elP.qThai.innerHTML = renderSegmentsHtml(d.q);
   elP.qChinese.textContent = d.q.chinese;
-  elP.aThai.textContent = d.a.thai;
+  elP.aThai.innerHTML = renderSegmentsHtml(d.a);
   elP.aChinese.textContent = d.a.chinese;
+
+  bindWordClicks(elP.qThai);
+  bindWordClicks(elP.aThai);
+
+  // 重置 mic 結果區
+  hideMicResult('q');
+  hideMicResult('a');
 
   elP.answerBlock.classList.add('hidden');
   elP.btnReveal.classList.remove('hidden');
@@ -117,8 +177,214 @@ function showPhraseDone() {
   elP.progressBar.style.width = '100%';
 }
 
+// ── 語音辨識（Web Speech API） ────────────────────
+
+function getSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+// Levenshtein 距離（純泰文比對用）
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const arrA = Array.from(a);
+  const arrB = Array.from(b);
+  const m = arrA.length, n = arrB.length;
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = arrA[i - 1] === arrB[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+// 純化字串：移除空白與標點，只留泰文字元/碼位
+function normalizeThaiText(s) {
+  if (!s) return '';
+  // 移除空白與常見中英標點，保留泰文字元
+  return s.replace(/[\s -/:-@[-`{-~　-〿＀-￯？，。！、]/g, '');
+}
+
+function similarityScore(recognized, target) {
+  const a = normalizeThaiText(recognized);
+  const b = normalizeThaiText(target);
+  if (!a.length && !b.length) return 1;
+  if (!a.length || !b.length) return 0;
+  const arrA = Array.from(a);
+  const arrB = Array.from(b);
+  const dist = levenshtein(arrA.join(''), arrB.join(''));
+  const maxLen = Math.max(arrA.length, arrB.length);
+  return 1 - dist / maxLen;
+}
+
+function bestMatchScore(alternatives, target) {
+  let best = { score: 0, transcript: '' };
+  for (const alt of alternatives) {
+    const s = similarityScore(alt, target);
+    if (s > best.score) best = { score: s, transcript: alt };
+  }
+  return best;
+}
+
+function getMicElements(role) {
+  return role === 'q'
+    ? { btn: elP.btnQMic, result: elP.qMicResult }
+    : { btn: elP.btnAMic, result: elP.aMicResult };
+}
+
+function showMicResult(role, kind, html) {
+  const { result } = getMicElements(role);
+  if (!result) return;
+  result.className = `phrase-mic-result ${kind}`;
+  result.innerHTML = html;
+  result.classList.remove('hidden');
+}
+function hideMicResult(role) {
+  const { result } = getMicElements(role);
+  if (!result) return;
+  result.className = 'phrase-mic-result hidden';
+  result.textContent = '';
+}
+
+function setMicRecording(role, recording) {
+  const { btn } = getMicElements(role);
+  if (!btn) return;
+  if (recording) {
+    btn.classList.add('recording');
+    btn.textContent = '🔴';
+    btn.title = '點擊停止';
+  } else {
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    btn.title = '跟我唸';
+  }
+}
+
+function cancelPhraseRecognition(silent) {
+  if (phraseRecognition) {
+    try { phraseRecognition.abort(); } catch (_) {}
+    phraseRecognition = null;
+  }
+  const role = phraseRecognitionRole;
+  phraseRecognitionRole = null;
+  if (role) {
+    setMicRecording(role, false);
+    if (!silent) {
+      showMicResult(role, 'info', '已取消');
+    }
+  }
+}
+
+function startPhraseRecognition(role) {
+  const Ctor = getSpeechRecognitionCtor();
+  if (!Ctor) {
+    showMicResult(role, 'error', '您的瀏覽器不支援語音辨識（請用 Chrome / Edge）');
+    const { btn } = getMicElements(role);
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  // 已在錄音中：再點一次 = 中止
+  if (phraseRecognition && phraseRecognitionRole === role) {
+    cancelPhraseRecognition(false);
+    return;
+  }
+  // 換一個 role 開錄：先取消舊的
+  if (phraseRecognition) {
+    cancelPhraseRecognition(true);
+  }
+
+  const topic = PHRASE_TOPICS.find(t => t.id === phraseTopicId);
+  if (!topic) return;
+  const d = topic.dialogues[phraseIdx];
+  if (!d) return;
+  const target = role === 'q' ? d.q.thai : d.a.thai;
+
+  const recog = new Ctor();
+  recog.lang = 'th-TH';
+  recog.interimResults = false;
+  recog.maxAlternatives = 3;
+  recog.continuous = false;
+
+  phraseRecognition = recog;
+  phraseRecognitionRole = role;
+  setMicRecording(role, true);
+  showMicResult(role, 'info', '🎙 請開始說泰文…');
+
+  recog.onresult = (event) => {
+    const alternatives = [];
+    if (event.results && event.results[0]) {
+      for (let i = 0; i < event.results[0].length; i++) {
+        alternatives.push(event.results[0][i].transcript || '');
+      }
+    }
+    if (!alternatives.length) {
+      showMicResult(role, 'error', '❌ 沒有辨識到任何聲音，請再試一次');
+      return;
+    }
+    const { score, transcript } = bestMatchScore(alternatives, target);
+    const pct = Math.round(score * 100);
+    if (score >= 0.9) {
+      showMicResult(role, 'success', `✅ 唸得很準！(相似度 ${pct}%)`);
+    } else if (score >= 0.7) {
+      showMicResult(role, 'warn', `👍 大致正確 (相似度 ${pct}%)，再聽一次標準發音<br><span style="opacity:0.8">辨識為：${escapeHtml(transcript)}</span>`);
+    } else {
+      showMicResult(role, 'error', `❌ 發音差距較大 (相似度 ${pct}%)，辨識為：${escapeHtml(transcript)}`);
+    }
+  };
+
+  recog.onerror = (event) => {
+    const code = event && event.error ? event.error : 'unknown';
+    let msg = '辨識失敗';
+    if (code === 'not-allowed' || code === 'service-not-allowed') {
+      msg = '麥克風權限被拒，請到瀏覽器設定開啟';
+    } else if (code === 'no-speech') {
+      msg = '沒有聽到聲音，請再試一次';
+    } else if (code === 'audio-capture') {
+      msg = '找不到麥克風，請檢查裝置';
+    } else if (code === 'language-not-supported') {
+      msg = '此瀏覽器不支援泰文辨識（請用 Chrome / Edge）';
+    } else if (code === 'aborted') {
+      // 主動取消，已在 cancelPhraseRecognition 顯示，避免覆蓋
+      return;
+    } else {
+      msg = `辨識失敗：${code}`;
+    }
+    showMicResult(role, 'error', msg);
+  };
+
+  recog.onend = () => {
+    // 結束（無論成功失敗或中止）：恢復按鈕狀態
+    if (phraseRecognition === recog) {
+      phraseRecognition = null;
+      phraseRecognitionRole = null;
+    }
+    setMicRecording(role, false);
+  };
+
+  try {
+    recog.start();
+  } catch (err) {
+    console.warn('[phrases] recognition.start failed', err);
+    showMicResult(role, 'error', `啟動失敗：${err && err.message ? err.message : err}`);
+    setMicRecording(role, false);
+    phraseRecognition = null;
+    phraseRecognitionRole = null;
+  }
+}
+
+// ── 事件綁定 ─────────────────────────────────────
+
 function bindPhraseEvents() {
   elP.backBtn.addEventListener('click', () => {
+    cancelPhraseRecognition(true);
     elP.dialogue.classList.add('hidden');
     elP.topicList.classList.remove('hidden');
   });
@@ -137,4 +403,19 @@ function bindPhraseEvents() {
     if (!topic) return;
     TTS.speak(topic.dialogues[phraseIdx].a.thai, null);
   });
+
+  if (elP.btnQMic) {
+    elP.btnQMic.addEventListener('click', () => startPhraseRecognition('q'));
+  }
+  if (elP.btnAMic) {
+    elP.btnAMic.addEventListener('click', () => startPhraseRecognition('a'));
+  }
+
+  // 不支援時直接 disable 按鈕（hover title 提示）
+  if (!getSpeechRecognitionCtor()) {
+    [elP.btnQMic, elP.btnAMic].forEach(b => {
+      if (!b) return;
+      b.title = '您的瀏覽器不支援語音辨識（請用 Chrome / Edge）';
+    });
+  }
 }

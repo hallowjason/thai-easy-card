@@ -634,6 +634,39 @@ kbd {
 .alpha-tone-badge.mid  { background: #E5F5EC; color: var(--green); }
 .alpha-tone-badge.low  { background: #E5F0FF; color: var(--blue); }
 .alpha-tone-badge.high { background: #FFE5E5; color: var(--red); }
+.alpha-tone-badge.vowel  { background: #F0E5FF; color: #7C3AED; }
+.alpha-tone-badge.final  { background: #FFF0E0; color: var(--accent); }
+.tone-vowel { color: #7C3AED; }
+.tone-final { color: var(--accent); }
+
+.alpha-cat-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.alpha-cat-btn {
+  flex: 1;
+  padding: 9px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
+  transition: all .15s;
+}
+.alpha-cat-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.alpha-endings {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.5;
+  margin-top: 4px;
+}
 
 /* ── 自訂詞彙 ───────────────────────────── */
 .custom-vocab-bar {
@@ -780,6 +813,92 @@ kbd {
   margin-top: 2px;
 }
 .btn-phrase-audio:active { background: var(--bg2); }
+
+/* ── 拆字（segment word） ── */
+.phrase-word {
+  display: inline-block;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #F5F2ED;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+.phrase-word:hover {
+  background: #EBE5DA;
+}
+.phrase-word:active {
+  transform: scale(0.96);
+  background: #E0D7C6;
+}
+.phrase-word.is-speaking {
+  background: rgba(200, 112, 58, 0.2);
+}
+.phrase-word-space {
+  display: inline-block;
+  width: 6px;
+}
+
+/* ── mic（語音辨識）按鈕 ── */
+.phrase-btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-phrase-mic {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+  color: #666;
+}
+.btn-phrase-mic:active { background: var(--bg2); }
+.btn-phrase-mic:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-phrase-mic.recording {
+  background: #FFEBEE;
+  border-color: #C62828;
+  color: #C62828;
+  animation: phrase-mic-pulse 1s ease-in-out infinite;
+}
+@keyframes phrase-mic-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── 辨識結果區 ── */
+.phrase-mic-result {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.phrase-mic-result.success {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+.phrase-mic-result.warn {
+  background: #FFF3E0;
+  color: #E65100;
+}
+.phrase-mic-result.error {
+  background: #FFEBEE;
+  color: #C62828;
+}
+.phrase-mic-result.info {
+  background: var(--bg2);
+  color: var(--text-sub);
+}
+
 .phrase-divider {
   text-align: center;
   color: var(--text-sub);

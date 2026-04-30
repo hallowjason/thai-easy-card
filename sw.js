@@ -1,5 +1,5 @@
 // Service Worker — 離線快取
-const CACHE = 'thai-easy-card-v9';
+const CACHE = 'thai-easy-card-v10';
 // 僅快取核心 JS/CSS/HTML，字體和音頻由網路提供（避免安裝失敗）
 const ASSETS = [
   './',
