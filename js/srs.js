@@ -8,7 +8,7 @@ const MS_DAY = 86400000;
 const VOCAB_TOTAL = 153;
 
 const DEFAULT_SETTINGS = {
-  dailyNewCards: 10,
+  dailyLimit: 20,
   cardTypes: ['zh2th', 'th2zh', 'blind_read', 'blind_listen'],
   imageEnabled: true,
   notificationEnabled: false,
@@ -180,7 +180,7 @@ function applyGrade(state, grade) {
   };
 }
 
-// 取得今日應複習的卡片（含新卡）
+// 取得今日應複習的卡片（含新卡，固定 dailyLimit 張，隨機混排）
 function getTodayQueue(vocabList, settings) {
   const srsData = getSRSData();
   const now = Date.now();
@@ -199,11 +199,11 @@ function getTodayQueue(vocabList, settings) {
     }
   }
 
-  const todayNewKey = getTodayNewKey();
-  const newCountToday = getStoredInt(todayNewKey);
-  const newToAdd = newCards.slice(0, Math.max(0, settings.dailyNewCards - newCountToday));
-
-  return [...spreadByVocab(due), ...spreadByVocab(newToAdd)];
+  const limit = settings.dailyLimit || 20;
+  // 到期複習卡優先，其次新卡，兩者都先個別 spreadByVocab，再合併 shuffle 截斷
+  const dueMixed = spreadByVocab(due);
+  const newMixed = spreadByVocab(newCards);
+  return shuffle([...dueMixed, ...newMixed]).slice(0, limit);
 }
 
 function recordGrade(cardId, grade) {
