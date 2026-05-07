@@ -160,6 +160,56 @@ function renderCard() {
   loadImage(currentCard);
 }
 
+// 高亮短句中的目標單字
+function highlightWord(sentence, word) {
+  if (!sentence) return '';
+  if (!word) return escHtml(sentence);
+  const idx = sentence.indexOf(word);
+  if (idx === -1) return escHtml(sentence);
+  return escHtml(sentence.slice(0, idx))
+    + `<mark class="vocab-hl">${escHtml(word)}</mark>`
+    + escHtml(sentence.slice(idx + word.length));
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+  );
+}
+
+// 產生短句 id（v001 → s001），僅適用標準詞彙
+function sentenceId(vocabId) {
+  return /^v\d{3}$/.test(vocabId) ? 's' + vocabId.slice(1) : null;
+}
+
+// 上下分割卡面：上半為泰文單字，下半為短句（含發音按鈕）
+function splitCardHTML(card) {
+  const ex = card.example;
+  if (!ex || !ex.thai) {
+    return `<div class="card-word-top">${card.thai}</div>`;
+  }
+  const sid = sentenceId(card.id);
+  const sentHtml = highlightWord(ex.thai, card.thai);
+  return `
+    <div class="card-word-top">${card.thai}</div>
+    <div class="card-divider"></div>
+    <div class="card-sentence-bottom">
+      <div class="card-sentence-text">${sentHtml}</div>
+      <button class="btn-sentence-audio" data-sentence-text="${escHtml(ex.thai)}" data-sentence-id="${sid || ''}">🔊</button>
+    </div>`;
+}
+
+function attachSentenceAudio(frontEl, card) {
+  const btn = frontEl.querySelector('.btn-sentence-audio');
+  if (!btn) return;
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const text = btn.dataset.sentenceText;
+    const sid = btn.dataset.sentenceId || undefined;
+    TTS.speak(text, sid);
+  });
+}
+
 function exampleHTML(card) {
   if (!card.example || (!card.example.thai && !card.example.chinese)) return '';
   return `<div class="card-example">
@@ -175,10 +225,12 @@ function renderFront(card) {
   if (t === ZH2TH) {
     el.cardFront.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
   } else if (t === TH2ZH) {
-    el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div>`;
+    el.cardFront.innerHTML = `<div class="card-split">${splitCardHTML(card)}</div>`;
+    attachSentenceAudio(el.cardFront, card);
     setTimeout(() => TTS.speak(card.thai, card.id), 300);
   } else if (t === BLIND_READ) {
-    el.cardFront.innerHTML = `<div class="card-thai">${card.thai}</div><div class="card-hint">看著泰文，試著在心中發音</div>`;
+    el.cardFront.innerHTML = `<div class="card-split">${splitCardHTML(card)}</div>`;
+    attachSentenceAudio(el.cardFront, card);
   } else if (t === BLIND_LISTEN) {
     el.cardFront.innerHTML = `<div class="card-blind-listen"><div class="listen-icon">🔊</div><div class="card-hint">仔細聆聽，辨識是哪個泰文字</div></div>`;
     setTimeout(() => TTS.speak(card.thai, card.id), 500);
@@ -190,13 +242,15 @@ function renderBack(card) {
   const t = card.cardType;
 
   if (t === ZH2TH) {
-    el.cardBack.innerHTML = `<div class="card-thai">${card.thai}</div>${exampleHTML(card)}`;
+    el.cardBack.innerHTML = `<div class="card-split">${splitCardHTML(card)}</div>`;
+    attachSentenceAudio(el.cardBack, card);
   } else if (t === TH2ZH) {
-    el.cardBack.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>${exampleHTML(card)}`;
+    el.cardBack.innerHTML = `<div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
   } else if (t === BLIND_READ) {
     el.cardBack.innerHTML = `<div class="card-audio-prompt">翻面後請大聲跟讀 ↓</div><div class="card-chinese">${card.chinese}</div><div class="card-pos">${card.pos}</div>`;
   } else if (t === BLIND_LISTEN) {
-    el.cardBack.innerHTML = `<div class="card-thai">${card.thai}</div><div class="card-chinese">${card.chinese}</div>`;
+    el.cardBack.innerHTML = `<div class="card-split">${splitCardHTML(card)}</div>`;
+    attachSentenceAudio(el.cardBack, card);
   }
 }
 
@@ -276,7 +330,7 @@ function renderStats() {
 
 // ── 設定 ──────────────────────────────────────────────────────────
 function renderSettingsUI() {
-  el.settingDailyNew.value = settings.dailyNewCards;
+  el.settingDailyNew.value = settings.dailyLimit;
   el.settingImage.checked = settings.imageEnabled;
   el.settingCardTypes.forEach(cb => {
     cb.checked = settings.cardTypes.includes(cb.value);
@@ -292,7 +346,7 @@ function saveSettingsUI() {
   if (cardTypes.length === 0) { alert('請至少選擇一種卡片類型'); return; }
   settings = {
     ...settings,
-    dailyNewCards: parseInt(el.settingDailyNew.value, 10) || 10,
+    dailyLimit: parseInt(el.settingDailyNew.value, 10) || 20,
     imageEnabled: el.settingImage.checked,
     cardTypes,
     notificationEnabled: el.settingNotif.checked,

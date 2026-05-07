@@ -39,14 +39,17 @@ function initPhrases() {
 }
 
 function renderPhraseTopics() {
-  elP.topicGrid.innerHTML = PHRASE_TOPICS.map(topic => `
-    <div class="topic-card phrase-topic-card" data-phrase-topic="${topic.id}">
+  const done = getCompletedTopics();
+  elP.topicGrid.innerHTML = PHRASE_TOPICS.map(topic => {
+    const isDone = done.includes(topic.id);
+    return `
+    <div class="topic-card phrase-topic-card${isDone ? ' topic-done' : ''}" data-phrase-topic="${topic.id}">
       <div class="topic-emoji">${topic.icon}</div>
       <div class="topic-name">${topic.title}</div>
-      <div class="topic-count">${topic.dialogues.length} 句對話</div>
-      <div class="topic-progress-bar"><div class="topic-progress-fill" style="width:0%"></div></div>
+      <div class="topic-count">${isDone ? '✅ 已完成' : topic.dialogues.length + ' 句對話'}</div>
+      <div class="topic-progress-bar"><div class="topic-progress-fill" style="width:${isDone ? 100 : 0}%"></div></div>
     </div>
-  `).join('');
+  `}).join('');
 
   elP.topicGrid.querySelectorAll('[data-phrase-topic]').forEach(card => {
     card.addEventListener('click', () => startPhraseTopic(card.dataset.phraseTopic));
@@ -167,9 +170,14 @@ function nextPhraseCard() {
 }
 
 function showPhraseDone() {
+  markTopicDone(phraseTopicId);
+  const done = getCompletedTopics();
+  const total = PHRASE_TOPICS.length;
+  const doneCount = done.length;
+
   elP.situation.textContent = '全部完成！';
   elP.qThai.textContent = '🎉';
-  elP.qChinese.textContent = '本組對話已練習完畢';
+  elP.qChinese.textContent = `本組對話已練習完畢　${doneCount} / ${total} 個主題完成`;
   elP.answerBlock.classList.add('hidden');
   elP.btnReveal.classList.add('hidden');
   elP.btnNext.classList.add('hidden');
@@ -181,6 +189,74 @@ function showPhraseDone() {
 
 function getSpeechRecognitionCtor() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+// ── Thai number normalization ─────────────────────────────────────
+// 語音辨識會把泰文數字口說轉成阿拉伯數字，需還原以便比對
+
+const THAI_ONES = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+
+function numToThai(n) {
+  if (n === 0) return 'ศูนย์';
+  let result = '';
+  if (n >= 1000) {
+    const k = Math.floor(n / 1000);
+    result += (k === 1 ? 'หนึ่ง' : THAI_ONES[k]) + 'พัน';
+    n %= 1000;
+  }
+  if (n >= 100) {
+    const h = Math.floor(n / 100);
+    result += (h === 1 ? 'หนึ่ง' : THAI_ONES[h]) + 'ร้อย';
+    n %= 100;
+  }
+  if (n >= 10) {
+    const t = Math.floor(n / 10);
+    if (t === 1) result += 'สิบ';
+    else if (t === 2) result += 'ยี่สิบ';
+    else result += THAI_ONES[t] + 'สิบ';
+    n %= 10;
+  }
+  if (n >= 1) {
+    const afterTens = result.includes('สิบ');
+    result += (n === 1 && afterTens) ? 'เอ็ด' : THAI_ONES[n];
+  }
+  return result;
+}
+
+function normalizeRecognized(text) {
+  // Replace Arabic digit sequences with Thai words
+  return text.replace(/\d+/g, m => numToThai(parseInt(m, 10)));
+}
+
+// ── Segment diff: highlight wrong segments in recognized result ───
+
+function segmentDiffHtml(recognized, segments) {
+  if (!segments || !segments.length) return escapeHtml(recognized);
+  const normRecog = normalizeThaiText(normalizeRecognized(recognized));
+  return segments
+    .filter(s => s !== ' ' && !/^\s+$/.test(s))
+    .map(seg => {
+      const found = normRecog.includes(normalizeThaiText(seg));
+      return found
+        ? `<span class="diff-ok">${escapeHtml(seg)}</span>`
+        : `<span class="diff-err">${escapeHtml(seg)}</span>`;
+    })
+    .join(' ');
+}
+
+// ── Completion tracking ───────────────────────────────────────────
+const PHRASE_DONE_KEY = 'thaiEasyCard_phraseDone';
+
+function getCompletedTopics() {
+  try { return JSON.parse(localStorage.getItem(PHRASE_DONE_KEY) || '[]'); } catch { return []; }
+}
+
+function markTopicDone(topicId) {
+  const done = getCompletedTopics();
+  if (!done.includes(topicId)) {
+    done.push(topicId);
+    localStorage.setItem(PHRASE_DONE_KEY, JSON.stringify(done));
+  }
 }
 
 // Levenshtein 距離（純泰文比對用）
@@ -227,8 +303,9 @@ function similarityScore(recognized, target) {
 function bestMatchScore(alternatives, target) {
   let best = { score: 0, transcript: '' };
   for (const alt of alternatives) {
-    const s = similarityScore(alt, target);
-    if (s > best.score) best = { score: s, transcript: alt };
+    const normalized = normalizeRecognized(alt);
+    const s = similarityScore(normalized, target);
+    if (s > best.score) best = { score: s, transcript: alt, normalized };
   }
   return best;
 }
@@ -306,6 +383,7 @@ function startPhraseRecognition(role) {
   const d = topic.dialogues[phraseIdx];
   if (!d) return;
   const target = role === 'q' ? d.q.thai : d.a.thai;
+  const targetSegments = role === 'q' ? d.q.segments : d.a.segments;
 
   const recog = new Ctor();
   recog.lang = 'th-TH';
@@ -334,9 +412,11 @@ function startPhraseRecognition(role) {
     if (score >= 0.9) {
       showMicResult(role, 'success', `✅ 唸得很準！(相似度 ${pct}%)`);
     } else if (score >= 0.7) {
-      showMicResult(role, 'warn', `👍 大致正確 (相似度 ${pct}%)，再聽一次標準發音<br><span style="opacity:0.8">辨識為：${escapeHtml(transcript)}</span>`);
+      const diffHtml = segmentDiffHtml(normalizeRecognized(transcript), targetSegments);
+      showMicResult(role, 'warn', `👍 大致正確 (${pct}%)，再試試：<br><span class="mic-diff">${diffHtml}</span>`);
     } else {
-      showMicResult(role, 'error', `❌ 發音差距較大 (相似度 ${pct}%)，辨識為：${escapeHtml(transcript)}`);
+      const diffHtml = segmentDiffHtml(normalizeRecognized(transcript), targetSegments);
+      showMicResult(role, 'error', `❌ 發音差距較大 (${pct}%)，錯誤詞標紅：<br><span class="mic-diff">${diffHtml}</span>`);
     }
   };
 

@@ -161,7 +161,7 @@
     <div class="alpha-cat-filter" id="alpha-cat-filter">
       <button class="alpha-cat-btn active" data-cat="consonant">子音 (42)</button>
       <button class="alpha-cat-btn" data-cat="vowel">母音 (28)</button>
-      <button class="alpha-cat-btn" data-cat="final">韻母 (9)</button>
+      <button class="alpha-cat-btn" data-cat="final">尾音 (9)</button>
     </div>
     <!-- 子音的聲調次篩選（僅子音類顯示） -->
     <div class="alpha-filter" id="alpha-filter">
@@ -170,7 +170,7 @@
       <button class="alpha-filter-btn" data-tone="low">🔵 低音</button>
       <button class="alpha-filter-btn" data-tone="high">🔴 高音</button>
     </div>
-    <p class="alpha-intro" id="alpha-intro">點擊卡片可展開記憶口訣，🔊 按鈕播放發音。聲母/末音格式：初始聲母／作為尾音時的發音。</p>
+    <p class="alpha-intro" id="alpha-intro">點擊卡片可展開記憶口訣，🔊 按鈕播放發音。子音格式：本音／作為尾音時的發音。</p>
     <div class="alpha-grid" id="alpha-grid"></div>
   </section>
 
@@ -331,8 +331,8 @@
     <div class="settings-section">
       <h3>每日學習量</h3>
       <div class="setting-row">
-        <label>每日新卡數量</label>
-        <input type="number" id="setting-daily-new" min="1" max="50" value="10">
+        <label>每日練習總量</label>
+        <input type="number" id="setting-daily-new" min="5" max="100" value="20">
       </div>
       <div class="setting-row">
         <label>顯示情境圖片</label>
